@@ -1,0 +1,9 @@
+# Landing/docs live in the slimtds-site submodule mounted at site/ on the demo
+# VPS only. Exclude it so prod images (vendor stage COPY . ./) never ship it.
+site/
+
+# Docker Desktop was installed with --installation-dir/--wsl-default-data-root
+# pointed at this project folder (to keep it off the C: drive). These are the
+# app binaries + the WSL VM disk (tens of GB) — never part of the build context.
+docker-app/
+docker-data/

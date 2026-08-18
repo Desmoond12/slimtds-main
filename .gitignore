@@ -1,0 +1,43 @@
+# PHP
+/vendor/
+
+# JS
+/node_modules/
+/public/assets/*
+!/public/assets/.gitkeep
+/public/p.js
+
+# Env & secrets
+/.env
+/.env.*
+!/.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+*.swp
+
+# Runtime
+/var/*
+!/var/.gitkeep
+!/var/backups
+/var/backups/*
+!/var/backups/.gitkeep
+/tmp/
+*.log
+
+# Geo databases (downloaded by geoipupdate)
+/geoip-data/
+
+# Tests
+/.phpunit.cache/
+/coverage/
+.phpunit.result.cache
+
+# Docker
+.docker-override.yml
+
+# Docker Desktop install dir + WSL data disk (relocated here to keep off C:)
+/docker-app/
+/docker-data/
