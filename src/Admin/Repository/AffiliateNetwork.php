@@ -11,6 +11,8 @@ final readonly class AffiliateNetwork
     /**
      * @param array<string,string> $statusMap  raw partner status value → canonical (approved/pending/hold/rejected)
      * @param array<string,string> $reportColumnMap  their CSV/report header → our canonical field (date/campaign/offer/event_type/clicks/count/payout/currency)
+     * @param array<string,string> $eventMap  raw partner event value → canonical event_type (reg/ftd/redeposit/...)
+     * @param list<string> $allowedIps  postback source allowlist, IPs or CIDRs; empty = no restriction
      */
     public function __construct(
         public string $id,
@@ -27,6 +29,8 @@ final readonly class AffiliateNetwork
         public DateTimeImmutable $updatedAt,
         public array $reportColumnMap = [],
         public string $reportDateFormat = 'Y-m-d',
+        public array $eventMap = [],
+        public array $allowedIps = [],
     ) {}
 
     /** @param array<string,mixed> $row */
@@ -50,7 +54,23 @@ final readonly class AffiliateNetwork
             updatedAt:        new DateTimeImmutable((string)$row['updated_at']),
             reportColumnMap:  $reportColumnMap,
             reportDateFormat: (string)($row['report_date_format'] ?? 'Y-m-d'),
+            eventMap:         self::decodeMap($row['event_map'] ?? '{}'),
+            allowedIps:       self::decodeList($row['allowed_ips'] ?? '[]'),
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function decodeList(mixed $raw): array
+    {
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $decoded = is_array($decoded) ? $decoded : [];
+        } else {
+            $decoded = is_array($raw) ? $raw : [];
+        }
+        return array_values(array_filter(array_map('strval', $decoded), static fn (string $s) => $s !== ''));
     }
 
     /**

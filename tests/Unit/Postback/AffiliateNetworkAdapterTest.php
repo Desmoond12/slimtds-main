@@ -5,7 +5,10 @@ declare(strict_types=1);
 use App\Admin\Repository\AffiliateNetwork;
 use App\Postback\AffiliateNetworkAdapter;
 
-/** @param array<string,string> $statusMap */
+/**
+ * @param array<string,string> $statusMap
+ * @param array<string,string> $eventMap
+ */
 function makeNetwork(
     string $clickParam = 'subid',
     string $statusParam = 'status',
@@ -13,6 +16,7 @@ function makeNetwork(
     string $externalIdParam = 'external_id',
     string $eventTypeParam = 'event_type',
     array $statusMap = [],
+    array $eventMap = [],
 ): AffiliateNetwork {
     return new AffiliateNetwork(
         id: '019fe000-0000-7000-8000-000000000001',
@@ -27,6 +31,7 @@ function makeNetwork(
         isActive: true,
         createdAt: new DateTimeImmutable(),
         updatedAt: new DateTimeImmutable(),
+        eventMap: $eventMap,
     );
 }
 
@@ -80,4 +85,29 @@ test('translateStatus is case-insensitive on the raw key as a fallback', functio
 test('translateStatus returns null for a raw value not present in a non-empty map', function (): void {
     $net = makeNetwork(statusMap: ['1' => 'approved']);
     expect(AffiliateNetworkAdapter::translateStatus($net, '99'))->toBeNull();
+});
+
+test('translateEvent passes raw value through unchanged when event_map is empty', function (): void {
+    $net = makeNetwork();
+    expect(AffiliateNetworkAdapter::translateEvent($net, 'ftd'))->toBe('ftd');
+    expect(AffiliateNetworkAdapter::translateEvent($net, 'conversion'))->toBe('conversion');
+});
+
+test('translateEvent maps raw partner event values to canonical ones', function (): void {
+    $net = makeNetwork(eventMap: ['firstdeposit' => 'ftd', 'registration' => 'reg', '2' => 'ftd']);
+    expect(AffiliateNetworkAdapter::translateEvent($net, 'firstdeposit'))->toBe('ftd');
+    expect(AffiliateNetworkAdapter::translateEvent($net, 'registration'))->toBe('reg');
+    expect(AffiliateNetworkAdapter::translateEvent($net, '2'))->toBe('ftd');
+});
+
+test('translateEvent passes UNMAPPED values through unchanged (open taxonomy, never rejects)', function (): void {
+    $net = makeNetwork(eventMap: ['firstdeposit' => 'ftd']);
+    // A money postback with an unconfigured event name must not be dropped —
+    // it just keeps its raw (already lowercased by extract()) name.
+    expect(AffiliateNetworkAdapter::translateEvent($net, 'cashback'))->toBe('cashback');
+});
+
+test('translateEvent falls back to a lowercased raw key match', function (): void {
+    $net = makeNetwork(eventMap: ['ftd_event' => 'ftd']);
+    expect(AffiliateNetworkAdapter::translateEvent($net, 'FTD_EVENT'))->toBe('ftd');
 });

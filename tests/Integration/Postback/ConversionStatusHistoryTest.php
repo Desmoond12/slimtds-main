@@ -12,6 +12,7 @@ use App\Postback\PostbackController;
 use App\Postback\PostbackOutbox;
 use App\Shared\CampaignIdGenerator;
 use App\Shared\Db\Connection;
+use App\Shared\Notification\NotificationOutbox;
 use App\Shared\Telegram\TelegramNotifier;
 use App\Admin\Repository\SettingsRepository;
 use App\Shared\Notification\NotificationRegistry;
@@ -42,7 +43,7 @@ beforeEach(function (): void {
         $cRepo,
         new AffiliateNetworkRepository($this->db),
         $this->db,
-        new TelegramNotifier(null, null),
+        new NotificationOutbox($this->db, new TelegramNotifier(null, null)),
         $outbox,
         new SettingsRepository($this->db),
         new NotificationRegistry(),

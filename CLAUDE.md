@@ -70,7 +70,7 @@ After editing CSS/JS templates, rebuild assets — admin views resolve URLs thro
 6. `OfferPicker` — weighted random over the matched flow's `target_offers`, active-only.
 7. `MacroExpander` — substitutes `{click_id}`, `{country}`, `{city}`, `{device_type}`, `{payout}`, `{rand:1-100}`, etc. in offer URLs and postback templates.
 8. `Schema/*` — 15 response strategies (HTTP 301–308, Meta Refresh, Double Meta, iFrame, HTML page, Text, JSON, Curl proxy, JS redirect, No Action, HTTP code, Formula). New schemas register via `SchemaRegistry`.
-9. Click is logged async to `stats.clicks` (RANGE-partitioned monthly, BRIN index on `created_at` per D3).
+9. Click is logged **synchronously** to `stats.clicks` (RANGE-partitioned monthly, BRIN index on `created_at` per D3) — a single INSERT in the request path; if it fails the redirect still happens (error_log only). Operator Telegram notifications are NOT sent inline — they enqueue into `core.notification_outbox`, drained by the `notifications:send` cron.
 
 ### Other request entry points
 

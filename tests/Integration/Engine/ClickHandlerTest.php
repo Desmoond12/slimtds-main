@@ -19,6 +19,7 @@ use App\Shared\CampaignIdGenerator;
 use App\Admin\Repository\SettingsRepository;
 use App\Shared\Db\Connection;
 use App\Shared\Notification\NotificationRegistry;
+use App\Shared\Notification\NotificationOutbox;
 use App\Shared\Telegram\TelegramNotifier;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Response;
@@ -46,7 +47,7 @@ beforeEach(function (): void {
         new MacroExpander(),
         new SchemaRegistry(),
         $this->db,
-        new TelegramNotifier(null, null),
+        new NotificationOutbox($this->db, new TelegramNotifier(null, null)),
         new SettingsRepository($this->db),
         new NotificationRegistry(),
     );

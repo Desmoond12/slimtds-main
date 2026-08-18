@@ -71,6 +71,8 @@ final class AffiliateNetworkController
         }
 
         $data['status_map'] = $this->form->extractStatusMap($data);
+        $data['event_map'] = $this->form->extractEventMap($data);
+        $data['allowed_ips'] = $this->form->extractAllowedIps($data);
         $network = $this->repo->create($data);
         flash_push('success', "Network {$network->name} created");
         return $response->withHeader('Location', "/admin/networks/{$network->id}/edit")->withStatus(302);
@@ -112,6 +114,8 @@ final class AffiliateNetworkController
         }
 
         $data['status_map'] = $this->form->extractStatusMap($data);
+        $data['event_map'] = $this->form->extractEventMap($data);
+        $data['allowed_ips'] = $this->form->extractAllowedIps($data);
         $this->repo->update($id, $data);
         flash_push('success', 'Network updated');
         return $response->withHeader('Location', "/admin/networks/{$id}/edit")->withStatus(302);

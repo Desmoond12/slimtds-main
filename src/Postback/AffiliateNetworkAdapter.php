@@ -53,4 +53,24 @@ final class AffiliateNetworkAdapter
         }
         return $net->statusMap[$raw] ?? $net->statusMap[strtolower($raw)] ?? null;
     }
+
+    /**
+     * Translate a raw partner event value ("firstDeposit", "goal=2"-style
+     * codes) to the operator's canonical event vocabulary (reg/ftd/
+     * redeposit/...), so per-event stats don't fork into synonym duplicates
+     * across networks. Unlike translateStatus, an unmapped value passes
+     * through UNCHANGED (lowercased) rather than failing: event_type is an
+     * open taxonomy, an unconfigured value is not a protocol violation, and
+     * a money postback must never be rejected over cosmetic naming — it
+     * stays visible in stats/postback-log under its raw name instead.
+     */
+    public static function translateEvent(AffiliateNetwork $net, string $raw): string
+    {
+        if ($net->eventMap === []) {
+            return $raw;
+        }
+        $mapped = $net->eventMap[$raw] ?? $net->eventMap[strtolower($raw)] ?? null;
+        $mapped = $mapped !== null ? strtolower(trim($mapped)) : '';
+        return $mapped !== '' ? $mapped : $raw;
+    }
 }

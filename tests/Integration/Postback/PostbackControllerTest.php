@@ -10,6 +10,7 @@ use App\Postback\PostbackController;
 use App\Postback\PostbackOutbox;
 use App\Shared\CampaignIdGenerator;
 use App\Shared\Db\Connection;
+use App\Shared\Notification\NotificationOutbox;
 use App\Shared\Telegram\TelegramNotifier;
 use App\Admin\Repository\SettingsRepository;
 use App\Shared\Notification\NotificationRegistry;
@@ -37,7 +38,7 @@ beforeEach(function (): void {
         $cRepo,
         $this->networksRepo,
         $this->db,
-        new TelegramNotifier(null, null),
+        new NotificationOutbox($this->db, new TelegramNotifier(null, null)),
         $outbox,
         new SettingsRepository($this->db),
         new NotificationRegistry(),
@@ -534,4 +535,240 @@ test('shared offer accepts postback for click from any campaign', function (): v
     expect($resp->getStatusCode())->toBe(200);
     $row = $this->db->fetchOne('SELECT campaign_id FROM core.conversions WHERE click_id = :cid', ['cid' => $cid]);
     expect($row['campaign_id'])->toBe($this->camp->id); // conversion attributed to click's campaign
+});
+
+// ---------------------------------------------------------------------------
+// Source-IP allowlist (affiliate_networks.allowed_ips)
+// ---------------------------------------------------------------------------
+
+function pbRequestFromIp(array $params, string $ip): \Psr\Http\Message\ServerRequestInterface
+{
+    $uri = '/postback?' . http_build_query($params);
+    return (new ServerRequestFactory())->createServerRequest('GET', $uri, ['REMOTE_ADDR' => $ip]);
+}
+
+test('allowed_ips: postback from a listed IP is accepted', function (): void {
+    $network = $this->networksRepo->create([
+        'name' => 'IP-locked PP', 'is_active' => '1',
+        'allowed_ips' => ['203.0.113.10', '198.51.100.0/24'],
+    ]);
+    $offer = $this->oRepo->create([
+        'name' => 'IP Offer', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $cid = clickId($this);
+
+    $resp = ($this->ctrl)(pbRequestFromIp(['subid' => $cid, 'token' => $offer->postbackToken, 'payout' => '10'], '198.51.100.77'), new Response());
+    expect($resp->getStatusCode())->toBe(200);
+    expect($this->db->fetchScalar('SELECT count(*) FROM core.conversions WHERE click_id = :c', ['c' => $cid]))->toBe(1);
+});
+
+test('allowed_ips: postback from an unlisted IP is rejected 403 before any write', function (): void {
+    $network = $this->networksRepo->create([
+        'name' => 'IP-locked PP2', 'is_active' => '1',
+        'allowed_ips' => ['203.0.113.10'],
+    ]);
+    $offer = $this->oRepo->create([
+        'name' => 'IP Offer2', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $cid = clickId($this);
+
+    $resp = ($this->ctrl)(pbRequestFromIp(['subid' => $cid, 'token' => $offer->postbackToken, 'payout' => '10'], '192.0.2.99'), new Response());
+    expect($resp->getStatusCode())->toBe(403);
+    $body = json_decode((string)$resp->getBody(), true);
+    expect($body['ok'])->toBeFalse();
+    expect($this->db->fetchScalar('SELECT count(*) FROM core.conversions WHERE click_id = :c', ['c' => $cid]))->toBe(0);
+    expect($this->db->fetchScalar(
+        "SELECT count(*) FROM core.postback_requests WHERE processing_status = 'FORBIDDEN_IP'",
+    ))->toBe(1);
+});
+
+test('allowed_ips: unresolvable source IP fails closed when an allowlist is configured', function (): void {
+    $network = $this->networksRepo->create([
+        'name' => 'IP-locked PP3', 'is_active' => '1',
+        'allowed_ips' => ['203.0.113.10'],
+    ]);
+    $offer = $this->oRepo->create([
+        'name' => 'IP Offer3', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $cid = clickId($this);
+
+    // pbRequest() carries no REMOTE_ADDR at all — the "who is this even
+    // from" case the allowlist exists to stop.
+    $resp = ($this->ctrl)(pbRequest(['subid' => $cid, 'token' => $offer->postbackToken]), new Response());
+    expect($resp->getStatusCode())->toBe(403);
+});
+
+test('allowed_ips: empty list keeps the open behavior', function (): void {
+    $network = $this->networksRepo->create(['name' => 'Open PP', 'is_active' => '1']);
+    $offer = $this->oRepo->create([
+        'name' => 'Open Offer', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $cid = clickId($this);
+
+    $resp = ($this->ctrl)(pbRequestFromIp(['subid' => $cid, 'token' => $offer->postbackToken], '192.0.2.99'), new Response());
+    expect($resp->getStatusCode())->toBe(200);
+});
+
+// ---------------------------------------------------------------------------
+// Event value translation (affiliate_networks.event_map)
+// ---------------------------------------------------------------------------
+
+test('event_map translates a raw partner event value to the canonical one', function (): void {
+    $network = $this->networksRepo->create([
+        'name' => 'Event PP', 'is_active' => '1',
+        'event_map' => ['firstdeposit' => 'ftd', 'registration' => 'reg'],
+    ]);
+    $offer = $this->oRepo->create([
+        'name' => 'Event Offer', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $cid = clickId($this);
+
+    // Partner sends "firstDeposit" — extract() lowercases, event_map maps to 'ftd'.
+    $resp = ($this->ctrl)(pbRequest(['subid' => $cid, 'token' => $offer->postbackToken, 'event_type' => 'firstDeposit', 'payout' => '50']), new Response());
+    expect($resp->getStatusCode())->toBe(200);
+    $row = $this->db->fetchOne('SELECT event_type, network_id FROM core.conversions WHERE click_id = :c', ['c' => $cid]);
+    expect($row['event_type'])->toBe('ftd');
+    expect($row['network_id'])->toBe($network->id);
+    // The append-only ledger row carries the network too.
+    expect($this->db->fetchScalar('SELECT network_id FROM core.conversion_events WHERE click_id = :c', ['c' => $cid]))->toBe($network->id);
+});
+
+test('event_map leaves unmapped event values untouched', function (): void {
+    $network = $this->networksRepo->create([
+        'name' => 'Event PP2', 'is_active' => '1',
+        'event_map' => ['firstdeposit' => 'ftd'],
+    ]);
+    $offer = $this->oRepo->create([
+        'name' => 'Event Offer2', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $cid = clickId($this);
+
+    $resp = ($this->ctrl)(pbRequest(['subid' => $cid, 'token' => $offer->postbackToken, 'event_type' => 'cashback']), new Response());
+    expect($resp->getStatusCode())->toBe(200);
+    expect($this->db->fetchScalar('SELECT event_type FROM core.conversions WHERE click_id = :c', ['c' => $cid]))->toBe('cashback');
+});
+
+// ---------------------------------------------------------------------------
+// Cross-click duplicate guard (uq_conversions_network_txid)
+// ---------------------------------------------------------------------------
+
+test('same network+event+external_id under a DIFFERENT click is acked as duplicate, first attribution stands', function (): void {
+    $network = $this->networksRepo->create(['name' => 'Dup PP', 'is_active' => '1']);
+    $offer = $this->oRepo->create([
+        'name' => 'Dup Offer', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $click1 = clickId($this);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '2.2.2.2')",
+    );
+    $click2 = clickId($this);
+    expect($click1)->not->toBe($click2);
+
+    $r1 = ($this->ctrl)(pbRequest(['subid' => $click1, 'token' => $offer->postbackToken, 'event_type' => 'ftd', 'external_id' => 'TX-1', 'payout' => '100']), new Response());
+    expect($r1->getStatusCode())->toBe(200);
+
+    $r2 = ($this->ctrl)(pbRequest(['subid' => $click2, 'token' => $offer->postbackToken, 'event_type' => 'ftd', 'external_id' => 'TX-1', 'payout' => '100']), new Response());
+    expect($r2->getStatusCode())->toBe(200); // acked, not errored — partner retries must not storm
+    $body = json_decode((string)$r2->getBody(), true);
+    expect($body['duplicate'] ?? null)->toBe('external_id');
+
+    // Exactly one conversion, attributed to the FIRST click.
+    expect($this->db->fetchScalar("SELECT count(*) FROM core.conversions WHERE external_id = 'TX-1'"))->toBe(1);
+    expect($this->db->fetchScalar("SELECT click_id FROM core.conversions WHERE external_id = 'TX-1'"))->toBe($click1);
+    expect($this->db->fetchScalar("SELECT count(*) FROM core.postback_requests WHERE processing_status = 'DUPLICATE_TXID'"))->toBe(1);
+});
+
+test('same external_id across DIFFERENT event types does not collide (player-id-as-external_id pattern)', function (): void {
+    $network = $this->networksRepo->create(['name' => 'Dup PP2', 'is_active' => '1']);
+    $offer = $this->oRepo->create([
+        'name' => 'Dup Offer2', 'url' => 'https://example.com/', 'is_active' => '1',
+        'network_id' => $network->id,
+    ]);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '1.1.1.1')",
+    );
+    $click1 = clickId($this);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, offer_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', '{$offer->id}', gen_random_uuid()::uuid, '2.2.2.2')",
+    );
+    $click2 = clickId($this);
+
+    // REG on click1 and FTD on click2, both carrying the same player id.
+    $r1 = ($this->ctrl)(pbRequest(['subid' => $click1, 'token' => $offer->postbackToken, 'event_type' => 'reg', 'external_id' => 'PLAYER-9']), new Response());
+    $r2 = ($this->ctrl)(pbRequest(['subid' => $click2, 'token' => $offer->postbackToken, 'event_type' => 'ftd', 'external_id' => 'PLAYER-9', 'payout' => '80']), new Response());
+    expect($r1->getStatusCode())->toBe(200);
+    expect($r2->getStatusCode())->toBe(200);
+    expect($this->db->fetchScalar("SELECT count(*) FROM core.conversions WHERE external_id = 'PLAYER-9'"))->toBe(2);
+});
+
+test('no-network postbacks are exempt from the cross-click txid guard (unchanged behavior)', function (): void {
+    $cid1 = clickId($this);
+    $this->db->execute(
+        "INSERT INTO stats.clicks (id, campaign_id, visitor_uuid, ip) VALUES (uuidv7(), '{$this->camp->id}', gen_random_uuid()::uuid, '3.3.3.3')",
+    );
+    $cid2 = clickId($this);
+
+    $r1 = ($this->ctrl)(pbRequest(['subid' => $cid1, 'token' => $this->offer->postbackToken, 'external_id' => 'TX-FREE']), new Response());
+    $r2 = ($this->ctrl)(pbRequest(['subid' => $cid2, 'token' => $this->offer->postbackToken, 'external_id' => 'TX-FREE']), new Response());
+    expect($r1->getStatusCode())->toBe(200);
+    expect($r2->getStatusCode())->toBe(200);
+    expect($this->db->fetchScalar("SELECT count(*) FROM core.conversions WHERE external_id = 'TX-FREE'"))->toBe(2);
+});
+
+// ---------------------------------------------------------------------------
+// Notification outbox — postbacks enqueue, never send inline
+// ---------------------------------------------------------------------------
+
+test('a new conversion enqueues a TG notification into the outbox instead of sending inline', function (): void {
+    $this->db->execute('DELETE FROM core.notification_outbox');
+    // Same wiring as beforeEach but with configured (fake) TG credentials —
+    // enqueue is a pure INSERT, no network I/O happens in the request path.
+    $ctrl = new PostbackController(
+        $this->oRepo,
+        $this->cRepo,
+        $this->networksRepo,
+        $this->db,
+        new NotificationOutbox($this->db, new TelegramNotifier('fake-token', '42')),
+        new PostbackOutbox($this->db, $this->oRepo, new MacroExpander()),
+        new SettingsRepository($this->db),
+        new NotificationRegistry(),
+    );
+
+    $cid = clickId($this);
+    $resp = $ctrl(pbRequest(['subid' => $cid, 'token' => $this->offer->postbackToken, 'payout' => '12.30']), new Response());
+    expect($resp->getStatusCode())->toBe(200);
+
+    $row = $this->db->fetchOne('SELECT message, sent_at FROM core.notification_outbox');
+    expect($row)->not->toBeNull();
+    expect($row['sent_at'])->toBeNull(); // pending — the cron delivers it
+    expect($row['message'])->toContain('PB Offer');
+
+    // A duplicate resend must NOT enqueue a second notification.
+    $ctrl(pbRequest(['subid' => $cid, 'token' => $this->offer->postbackToken, 'payout' => '12.30']), new Response());
+    expect($this->db->fetchScalar('SELECT count(*) FROM core.notification_outbox'))->toBe(1);
 });

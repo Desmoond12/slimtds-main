@@ -39,6 +39,16 @@ final class AffiliateNetworkForm
             $errors['status_map'] = 'validation.pattern';
         }
 
+        [, $eventMapErrors] = $this->parseEventMap((string)($data['event_map_raw'] ?? ''));
+        if ($eventMapErrors !== []) {
+            $errors['event_map'] = 'validation.pattern';
+        }
+
+        [, $ipErrors] = $this->parseAllowedIps((string)($data['allowed_ips_raw'] ?? ''));
+        if ($ipErrors !== []) {
+            $errors['allowed_ips'] = 'validation.pattern';
+        }
+
         return $errors;
     }
 
@@ -53,6 +63,91 @@ final class AffiliateNetworkForm
     {
         [$map] = $this->parseStatusMap((string)($data['status_map_raw'] ?? ''));
         return $map;
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     * @return array<string,string>
+     */
+    public function extractEventMap(array $data): array
+    {
+        [$map] = $this->parseEventMap((string)($data['event_map_raw'] ?? ''));
+        return $map;
+    }
+
+    /**
+     * @param array<string,mixed> $data
+     * @return list<string>
+     */
+    public function extractAllowedIps(array $data): array
+    {
+        [$ips] = $this->parseAllowedIps((string)($data['allowed_ips_raw'] ?? ''));
+        return $ips;
+    }
+
+    /**
+     * "raw=canonical" per line, same UX as status_map — but the canonical
+     * side is free text (open event taxonomy: reg/ftd/redeposit/...), only
+     * required to be a url-safe word so it groups cleanly in stats.
+     *
+     * @return array{0: array<string,string>, 1: list<string>}
+     */
+    private function parseEventMap(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return [[], []];
+        }
+        $map = [];
+        $errors = [];
+        $lines = array_filter(
+            array_map('trim', explode("\n", str_replace("\r", '', $raw))),
+            static fn (string $l) => $l !== '',
+        );
+        foreach ($lines as $line) {
+            $parts = explode('=', $line, 2);
+            if (count($parts) !== 2) {
+                $errors[] = $line;
+                continue;
+            }
+            [$rawVal, $canonical] = array_map('trim', $parts);
+            $canonical = strtolower($canonical);
+            if ($rawVal === '' || !preg_match('/^[a-z0-9_\-]{1,40}$/', $canonical)) {
+                $errors[] = $line;
+                continue;
+            }
+            $map[$rawVal] = $canonical;
+        }
+        return [$map, $errors];
+    }
+
+    /**
+     * One IP or CIDR per line (IPv4 + IPv6). Invalid entries are hard form
+     * errors, not silently dropped — a typo'd allowlist entry that vanished
+     * quietly would lock out the partner's real postback IP in production.
+     *
+     * @return array{0: list<string>, 1: list<string>}
+     */
+    private function parseAllowedIps(string $raw): array
+    {
+        $raw = trim($raw);
+        if ($raw === '') {
+            return [[], []];
+        }
+        $ips = [];
+        $errors = [];
+        $lines = array_filter(
+            array_map('trim', explode("\n", str_replace("\r", '', $raw))),
+            static fn (string $l) => $l !== '',
+        );
+        foreach ($lines as $line) {
+            if (!\App\Shared\Net\IpMatcher::isValidEntry($line)) {
+                $errors[] = $line;
+                continue;
+            }
+            $ips[] = $line;
+        }
+        return [array_values(array_unique($ips)), $errors];
     }
 
     /**

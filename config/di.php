@@ -110,9 +110,11 @@ return static function (): \DI\Container {
                 $_ENV['TELEGRAM_BOT_TOKEN'] ?? null,
                 $_ENV['TELEGRAM_CHAT_ID']   ?? null,
             ),
+        \App\Shared\Notification\NotificationOutbox::class => \DI\autowire(),
         \App\Postback\PostbackOutbox::class => \DI\autowire(),
         \App\Postback\PostbackController::class => \DI\autowire(),
         \App\Cron\Command\PostbackDeliverCommand::class => \DI\autowire(),
+        \App\Cron\Command\NotificationsSendCommand::class => \DI\autowire(),
         \App\Cron\Command\RrwebFlushCommand::class => \DI\autowire(),
         \App\Cron\Command\BotsUpdateExtraCommand::class => \DI\autowire(),
         \App\Shared\I18n\TranslatorFactory::class => static function (): \App\Shared\I18n\TranslatorFactory {

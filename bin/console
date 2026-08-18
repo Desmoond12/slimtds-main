@@ -42,6 +42,7 @@ $commands = [
     App\Cron\Command\DbBackupCommand::class,
     App\Admin\Command\DbRestoreCommand::class,
     App\Cron\Command\PostbackDeliverCommand::class,
+    App\Cron\Command\NotificationsSendCommand::class,
     App\Cron\Command\InboxFlushCommand::class,
     App\Cron\Command\RrwebFlushCommand::class,
 ];

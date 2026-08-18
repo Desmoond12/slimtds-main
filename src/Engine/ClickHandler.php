@@ -12,9 +12,9 @@ use App\Engine\Schema\SchemaRegistry;
 use App\Shared\Db\Connection;
 use App\Shared\Referer\SearchEngine;
 use App\Admin\Repository\SettingsRepository;
+use App\Shared\Notification\NotificationOutbox;
 use App\Shared\Notification\NotificationRegistry;
 use App\Shared\RealIp;
-use App\Shared\Telegram\TelegramNotifier;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Ramsey\Uuid\Uuid;
@@ -46,7 +46,7 @@ final class ClickHandler
         private readonly MacroExpander $macros,
         private readonly SchemaRegistry $schemas,
         private readonly Connection $db,
-        private readonly TelegramNotifier $tg,
+        private readonly NotificationOutbox $notifyQueue,
         private readonly SettingsRepository $settings,
         private readonly NotificationRegistry $notifications,
     ) {}
@@ -355,13 +355,16 @@ final class ClickHandler
     }
 
     /**
-     * Fire a TG alert if this visitor previously hit the lander pixel from one
-     * of the operator-selected AI/search sources in the last 24 hours.
-     * Fire-and-forget — never throws into the redirect path.
+     * Enqueue a TG alert if this visitor previously hit the lander pixel from
+     * one of the operator-selected AI/search sources in the last 24 hours.
+     * Fire-and-forget — never throws into the redirect path. The actual send
+     * happens in the notifications:send cron (outbox), never inline: a
+     * synchronous cURL to api.telegram.org here used to make a real visitor
+     * wait up to 5s for their redirect.
      */
     private function notifyIfAiSourced(Context $ctx, Campaign $campaign, ?string $outUrl): void
     {
-        if (!$this->tg->isConfigured() || $ctx->visitorUuid === null) return;
+        if (!$this->notifyQueue->isConfigured() || $ctx->visitorUuid === null) return;
         if (!$this->settings->getBool('notif_ai_click_enabled', true)) return;
 
         try {
@@ -407,7 +410,7 @@ final class ClickHandler
                     'app_url'   => $appUrl,
                 ],
             );
-            $this->tg->send($msg);
+            $this->notifyQueue->enqueue($msg);
         } catch (\Throwable $e) {
             error_log('[engine] AI-source TG check failed: ' . $e->getMessage());
         }

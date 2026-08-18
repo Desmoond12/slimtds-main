@@ -8,10 +8,11 @@ use App\Admin\Repository\AffiliateNetworkRepository;
 use App\Admin\Repository\CampaignRepository;
 use App\Admin\Repository\OfferRepository;
 use App\Shared\Db\Connection;
+use App\Shared\Net\IpMatcher;
 use App\Shared\RealIp;
 use App\Shared\Referer\SearchEngine;
-use App\Shared\Telegram\TelegramNotifier;
 use App\Admin\Repository\SettingsRepository;
+use App\Shared\Notification\NotificationOutbox;
 use App\Shared\Notification\NotificationRegistry;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -26,7 +27,7 @@ final class PostbackController
         private readonly CampaignRepository $campaigns,
         private readonly AffiliateNetworkRepository $networks,
         private readonly Connection $db,
-        private readonly TelegramNotifier $tg,
+        private readonly NotificationOutbox $notifyQueue,
         private readonly PostbackOutbox $outbox,
         private readonly SettingsRepository $settings,
         private readonly NotificationRegistry $notifications,
@@ -115,10 +116,25 @@ final class PostbackController
         $networkId = $offer?->networkId ?? $campaignFromToken?->networkId;
         $network = $networkId !== null ? $this->networks->findById($networkId) : null;
         if ($network !== null && $network->isActive) {
+            // Source-IP allowlist — the token alone is a weak gate (it lives
+            // in the query string and leaks into logs/referers/partner-chat
+            // screenshots; a leaked token means anyone can fabricate FTD /
+            // revshare money events with curl). When the operator filled in
+            // the network's published postback egress IPs, anything else is
+            // rejected before a single row of conversion state is written.
+            // Fail-closed on an unresolvable source IP by design: with an
+            // allowlist configured, "unknown sender" is exactly what it must
+            // stop. Empty list (default) = no restriction, as before.
+            if ($network->allowedIps !== []
+                && !IpMatcher::matchesAny($sourceIp, $network->allowedIps)) {
+                $this->logRequest($method, $rawQuery, $sourceIp, $subid, $token, $status, $payoutRaw, $externalId, null, $offer?->id, 'FORBIDDEN_IP', 403);
+                return $this->json($response, ['ok' => false, 'error' => 'source ip not allowed'], 403);
+            }
+
             $extracted = AffiliateNetworkAdapter::extract($network, $params);
             $subid = $extracted['subid'];
             $externalId = $extracted['externalId'];
-            $eventType = $extracted['eventType'];
+            $eventType = AffiliateNetworkAdapter::translateEvent($network, $extracted['eventType']);
             $payoutRaw = $extracted['payout'];
             if ($extracted['statusPresent']) {
                 $translated = AffiliateNetworkAdapter::translateStatus($network, $extracted['status']);
@@ -184,6 +200,7 @@ final class PostbackController
         if ($tokenScope === 'campaign' && $subid === '') {
             $pingParams = [
                 'campaign_id' => $campaignFromToken->id,
+                'network_id'  => $network !== null && $network->isActive ? $network->id : null,
                 'event_type'  => $eventType,
                 'payout'      => $payout,
                 'status'      => $status,
@@ -194,9 +211,9 @@ final class PostbackController
             $this->db->execute(
                 <<<'SQL'
                     INSERT INTO core.conversions
-                        (click_id, campaign_id, offer_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
+                        (click_id, campaign_id, offer_id, network_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
                     VALUES
-                        (NULL, :campaign_id, NULL, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
+                        (NULL, :campaign_id, NULL, :network_id, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
                 SQL,
                 $pingParams,
             );
@@ -205,15 +222,15 @@ final class PostbackController
             $this->db->execute(
                 <<<'SQL'
                     INSERT INTO core.conversion_events
-                        (click_id, campaign_id, offer_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
+                        (click_id, campaign_id, offer_id, network_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
                     VALUES
-                        (NULL, :campaign_id, NULL, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
+                        (NULL, :campaign_id, NULL, :network_id, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
                 SQL,
                 $pingParams,
             );
-            if ($this->tg->isConfigured() && $this->settings->getBool('notif_conv_ping_enabled', true)) {
+            if ($this->notifyQueue->isConfigured() && $this->settings->getBool('notif_conv_ping_enabled', true)) {
                 $appUrl = rtrim((string)($_ENV['APP_URL'] ?? 'https://slimtds.local'), '/');
-                $this->tg->send($this->notifications->render(
+                $this->notifyQueue->enqueue($this->notifications->render(
                     NotificationRegistry::CONV_PING,
                     $this->settings->get('notif_conv_ping_template', ''),
                     [
@@ -311,7 +328,9 @@ final class PostbackController
         // repeat REDEP postbacks only collide if the partner reuses the same
         // external_id (or sends none at all — see migration comment, an
         // honest limitation when the partner gives us no differentiator).
-        [$conversionId, $isNewEvent, $updated] = $this->db->transactional(function () use ($subid, $campaignId, $offer, $payout, $status, $externalId, $eventType, $sourceIp, $rawQuery) {
+        $convNetworkId = $network !== null && $network->isActive ? $network->id : null;
+        try {
+            [$conversionId, $isNewEvent, $updated] = $this->db->transactional(function () use ($subid, $campaignId, $offer, $payout, $status, $externalId, $eventType, $sourceIp, $rawQuery, $convNetworkId) {
             $this->db->execute(
                 'SELECT pg_advisory_xact_lock(hashtext(:key))',
                 ['key' => 'conversion:' . $subid . ':' . $eventType . ':' . ($externalId ?? '')],
@@ -340,14 +359,15 @@ final class PostbackController
             $convRow = $this->db->fetchOne(
                 <<<'SQL'
                     INSERT INTO core.conversions
-                        (click_id, campaign_id, offer_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
+                        (click_id, campaign_id, offer_id, network_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
                     VALUES
-                        (:click_id, :campaign_id, :offer_id, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
+                        (:click_id, :campaign_id, :offer_id, :network_id, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
                     ON CONFLICT (click_id, event_type, (COALESCE(external_id, '')))
                     DO UPDATE SET
                         payout      = EXCLUDED.payout,
                         status      = EXCLUDED.status,
                         external_id = EXCLUDED.external_id,
+                        network_id  = EXCLUDED.network_id,
                         source_ip   = EXCLUDED.source_ip,
                         raw_query   = EXCLUDED.raw_query,
                         updated_at  = now()
@@ -357,6 +377,7 @@ final class PostbackController
                     'click_id'    => $subid,
                     'campaign_id' => $campaignId,
                     'offer_id'    => $offer->id,
+                    'network_id'  => $convNetworkId,
                     'event_type'  => $eventType,
                     'payout'      => $payout,
                     'status'      => $status,
@@ -370,14 +391,15 @@ final class PostbackController
                 $this->db->execute(
                     <<<'SQL'
                         INSERT INTO core.conversion_events
-                            (click_id, campaign_id, offer_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
+                            (click_id, campaign_id, offer_id, network_id, event_type, payout, status, external_id, currency, source_ip, raw_query)
                         VALUES
-                            (:click_id, :campaign_id, :offer_id, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
+                            (:click_id, :campaign_id, :offer_id, :network_id, :event_type, :payout, :status, :external_id, 'USD', :source_ip, :raw_query)
                     SQL,
                     [
                         'click_id'    => $subid,
                         'campaign_id' => $campaignId,
                         'offer_id'    => $offer->id,
+                        'network_id'  => $convNetworkId,
                         'event_type'  => $eventType,
                         'payout'      => $payout,
                         'status'      => $status,
@@ -389,7 +411,21 @@ final class PostbackController
             }
 
             return [$convRow !== null ? (string)$convRow['id'] : null, $isNewEvent, $updated];
-        });
+            });
+        } catch (\PDOException $e) {
+            // Cross-click duplicate guard (uq_conversions_network_txid): the
+            // same (network, event_type, external_id) already exists under a
+            // DIFFERENT click_id — a partner-side bug or a player converting
+            // through two clicks. The first attribution stands; this resend
+            // is acknowledged as a duplicate (200, not 4xx/5xx) so the
+            // partner's retry logic doesn't hammer us, and the raw request
+            // stays visible in the postback log as DUPLICATE_TXID.
+            if ((string)$e->getCode() === '23505' && str_contains($e->getMessage(), 'uq_conversions_network_txid')) {
+                $this->logRequest($method, $rawQuery, $sourceIp, $subid, $token, $status, $payoutRaw, $externalId, null, $offer->id, 'DUPLICATE_TXID', 200);
+                return $this->json($response, ['ok' => true, 'duplicate' => 'external_id']);
+            }
+            throw $e;
+        }
 
         // Enqueue outgoing S2S postbacks (no-ops if offer has no postback_urls)
         if ($conversionId !== null && $isNewEvent) {
@@ -402,7 +438,7 @@ final class PostbackController
             ]);
         }
 
-        if ($isNewEvent && $this->tg->isConfigured() && $this->settings->getBool('notif_conv_click_enabled', true)) {
+        if ($isNewEvent && $this->notifyQueue->isConfigured() && $this->settings->getBool('notif_conv_click_enabled', true)) {
             $appUrl = rtrim((string)($_ENV['APP_URL'] ?? 'https://slimtds.local'), '/');
             $landerHost = (string)($clickRow['lander_host'] ?? '');
             $landerBtn  = (string)($clickRow['lander_button'] ?? '');
@@ -459,7 +495,7 @@ final class PostbackController
                     'app_url'    => $appUrl,
                 ],
             );
-            $this->tg->send($msg);
+            $this->notifyQueue->enqueue($msg);
         }
 
         $processingStatus = !$updated ? 'OK_NEW' : ($isNewEvent ? 'OK_TRANSITION' : 'OK_DUPLICATE');

@@ -91,6 +91,46 @@ $titleKey = $network === null ? 'networks.create' : 'networks.edit';
             <?php endif; ?>
         </div>
 
+        <!-- Section: event value translation -->
+        <div class="form-section">
+            <span class="form-section-label"><?= e(t('networks.section_event_map')) ?></span>
+            <?php
+                $existingEventLines = [];
+                if ($network !== null) {
+                    foreach ($network->eventMap as $raw => $canonical) {
+                        $existingEventLines[] = $raw . '=' . $canonical;
+                    }
+                }
+                $eventTextareaValue = old('event_map_raw', implode("\n", $existingEventLines));
+            ?>
+            <label class="label-uppercase" for="event_map_raw"><?= e(t('networks.event_map_label')) ?></label>
+            <textarea id="event_map_raw" name="event_map_raw" rows="4"
+                      class="input"
+                      style="font-family:var(--font-mono);font-size:0.78rem;resize:vertical;min-height:80px"
+                      placeholder="firstDeposit=ftd&#10;registration=reg&#10;2=ftd"><?= e($eventTextareaValue) ?></textarea>
+            <p class="form-help"><?= e(t('networks.event_map_help')) ?></p>
+            <?php if (isset($errors['event_map'])): ?>
+                <p class="form-error"><?= e(t($errors['event_map'])) ?></p>
+            <?php endif; ?>
+        </div>
+
+        <!-- Section: postback source allowlist -->
+        <div class="form-section">
+            <span class="form-section-label"><?= e(t('networks.section_allowed_ips')) ?></span>
+            <?php
+                $ipsTextareaValue = old('allowed_ips_raw', implode("\n", $network?->allowedIps ?? []));
+            ?>
+            <label class="label-uppercase" for="allowed_ips_raw"><?= e(t('networks.allowed_ips_label')) ?></label>
+            <textarea id="allowed_ips_raw" name="allowed_ips_raw" rows="3"
+                      class="input"
+                      style="font-family:var(--font-mono);font-size:0.78rem;resize:vertical;min-height:64px"
+                      placeholder="203.0.113.10&#10;198.51.100.0/24&#10;2a00:1234::/32"><?= e($ipsTextareaValue) ?></textarea>
+            <p class="form-help"><?= e(t('networks.allowed_ips_help')) ?></p>
+            <?php if (isset($errors['allowed_ips'])): ?>
+                <p class="form-error"><?= e(t($errors['allowed_ips'])) ?></p>
+            <?php endif; ?>
+        </div>
+
         <!-- Section: notes -->
         <div class="form-section">
             <span class="form-section-label"><?= e(t('networks.section_notes')) ?></span>

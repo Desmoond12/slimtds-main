@@ -209,6 +209,12 @@ networks:
   section_status_map: Status value translation
   status_map_label: Raw → canonical (one per line)
   status_map_help: 'One "raw=canonical" pair per line, e.g. 1=approved. Canonical must be one of approved/pending/hold/rejected. Leave empty if the partner already sends our status words.'
+  section_event_map: Event value translation
+  event_map_label: Raw → canonical (one per line)
+  event_map_help: 'One "raw=canonical" pair per line, e.g. firstDeposit=ftd. Canonical is your own event vocabulary (reg/ftd/redeposit/...). Unmapped values pass through unchanged — nothing is ever rejected over this map.'
+  section_allowed_ips: Postback source IPs
+  allowed_ips_label: Allowed IPs / CIDRs (one per line)
+  allowed_ips_help: 'Postbacks for this network''s offers/campaigns are accepted only from these IPs (the network''s published postback egress IPs). Empty = no restriction. IPv4, IPv6 and CIDR ranges supported.'
   section_notes: Notes
   empty: No affiliate networks yet
   empty_hint: 'Most partners just use the postback URL you write — you only need a network here if one dictates its own fixed param names or status codes.'

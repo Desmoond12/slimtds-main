@@ -59,9 +59,9 @@ final class AffiliateNetworkRepository
         $row = $this->db->fetchOne(
             <<<'SQL'
                 INSERT INTO core.affiliate_networks
-                    (name, click_param, status_param, payout_param, external_id_param, event_type_param, status_map, notes, is_active)
+                    (name, click_param, status_param, payout_param, external_id_param, event_type_param, status_map, event_map, allowed_ips, notes, is_active)
                 VALUES
-                    (:name, :click_param, :status_param, :payout_param, :external_id_param, :event_type_param, :status_map::jsonb, :notes, :is_active)
+                    (:name, :click_param, :status_param, :payout_param, :external_id_param, :event_type_param, :status_map::jsonb, :event_map::jsonb, :allowed_ips::jsonb, :notes, :is_active)
                 RETURNING *
             SQL,
             $this->params($data),
@@ -84,6 +84,8 @@ final class AffiliateNetworkRepository
                     external_id_param = :external_id_param,
                     event_type_param = :event_type_param,
                     status_map = :status_map::jsonb,
+                    event_map = :event_map::jsonb,
+                    allowed_ips = :allowed_ips::jsonb,
                     notes = :notes,
                     is_active = :is_active,
                     updated_at = now()
@@ -137,6 +139,8 @@ final class AffiliateNetworkRepository
             'external_id_param' => (string)($data['external_id_param'] ?? 'external_id'),
             'event_type_param'  => (string)($data['event_type_param'] ?? 'event_type'),
             'status_map'        => json_encode($data['status_map'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            'event_map'         => json_encode($data['event_map'] ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+            'allowed_ips'       => json_encode(array_values((array)($data['allowed_ips'] ?? [])), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '[]',
             'notes'             => trim((string)($data['notes'] ?? '')) !== '' ? trim((string)$data['notes']) : null,
             // Same convention as OfferRepository: an unchecked checkbox
             // simply isn't submitted by HTML forms, so absent here means

@@ -39,6 +39,11 @@
 # Deliver outgoing S2S postbacks every minute
 * * * * * /usr/local/bin/php /app/bin/console postback:deliver
 
+# Drain the operator-notification outbox (Telegram). 1-minute cron with a
+# ~50s inner loop (10s poll) so click/conversion alerts arrive near-realtime
+# while the actual TG cURL stays out of the request paths.
+* * * * * /usr/local/bin/php /app/bin/console notifications:send
+
 # Drain pixel_events_inbox → pixel_events. Every minute is the finest stable
 # resolution supercronic accepts in our build (6-field with seconds + @every Ns
 # both fail at runtime even when -test reports valid). The flush command runs
