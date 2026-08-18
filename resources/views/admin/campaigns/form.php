@@ -342,7 +342,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
 
     <?php if ($campaign !== null && $campaign->postbackToken !== ''): ?>
         <?php $campPbUrl = $app_url . '/postback?subid={click_id}&token=' . $campaign->postbackToken . '&payout=&status=approved'; ?>
-        <div style="margin:6px 0 18px;padding:14px 16px;border:1px solid var(--color-terra-300);border-radius:8px;background:#fff8f1">
+        <div style="margin:6px 0 18px;padding:14px 16px;border:1px solid var(--color-terra-300);border-radius:8px;background:#eff5ff">
             <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
                 <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--color-text)"><?= e(t('campaigns.postback_campaign_url')) ?></span>
                 <span class="badge badge-terra">catch-all</span>
@@ -488,8 +488,8 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
                 width: 22px; height: 22px;
                 display: inline-flex; align-items: center; justify-content: center;
                 border-radius: 5px;
-                background: #fff8f1;
-                color: #b54f17;
+                background: #eff5ff;
+                color: #2f6bdd;
                 flex: 0 0 auto;
             }
             .diag-card-title {
@@ -514,8 +514,8 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
 
             /* Campaign card — accent left bar */
             .diag-card-campaign {
-                border-color: #d9713e;
-                box-shadow: inset 3px 0 0 #d9713e, 0 1px 0 rgba(26, 25, 23, 0.02);
+                border-color: #5b8def;
+                box-shadow: inset 3px 0 0 #5b8def, 0 1px 0 rgba(26, 25, 23, 0.02);
             }
             .diag-card-campaign .diag-card-icon { background: #1a1917; color: #fafaf7; }
             .diag-card-campaign .diag-card-title { font-size: 1.05rem; }
@@ -536,7 +536,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
 
             /* Flow card */
             .diag-card-flow.is-off { opacity: 0.55; border-style: dashed; }
-            .diag-card-flow .diag-card-icon { background: #fff8f1; color: #b54f17; }
+            .diag-card-flow .diag-card-icon { background: #eff5ff; color: #2f6bdd; }
             .diag-card-flow.is-off .diag-card-icon { background: #efece5; color: #a8a399; }
             .diag-prio {
                 display: inline-flex; align-items: center; gap: 3px;
@@ -565,7 +565,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
             }
             .diag-pill-success { background: #ecf7e9; color: #2c6e3a; }
             .diag-pill-mono    { font-family: ui-monospace, monospace; font-size: 0.7rem; }
-            .diag-pill-schema  { background: #fff8f1; color: #b54f17; }
+            .diag-pill-schema  { background: #eff5ff; color: #2f6bdd; }
             .diag-pill-weight  { background: #1a1917; color: #fafaf7; font-family: ui-monospace, monospace; font-size: 0.7rem; }
 
             .diag-filters {
@@ -589,11 +589,11 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
                 line-height: 1.5;
             }
             .diag-cond-field { color: #6b6457; }
-            .diag-cond-op { color: #d9713e; font-weight: 600; padding: 0 2px; }
+            .diag-cond-op { color: #5b8def; font-weight: 600; padding: 0 2px; }
             .diag-cond-val { color: #1a1917; font-weight: 500; }
             .diag-cond-or  {
                 font-family: ui-monospace, monospace; font-size: 0.65rem;
-                color: #b54f17; font-weight: 700; letter-spacing: 0.08em;
+                color: #2f6bdd; font-weight: 700; letter-spacing: 0.08em;
                 padding: 0 2px;
             }
             .diag-filters-empty {
@@ -608,7 +608,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
             .diag-card-offer {
                 padding: 10px 14px;
             }
-            .diag-card-offer .diag-card-icon { background: #fef3eb; color: #b54f17; }
+            .diag-card-offer .diag-card-icon { background: #eff5ff; color: #2f6bdd; }
             .diag-offer-url {
                 font-family: ui-monospace, monospace;
                 font-size: 0.7rem;
@@ -629,7 +629,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
             }
             .diag-weight-fill {
                 height: 100%;
-                background: linear-gradient(90deg, #d9713e, #b54f17);
+                background: linear-gradient(90deg, #5b8def, #2f6bdd);
                 border-radius: 3px;
                 transition: width 200ms ease;
             }
@@ -638,7 +638,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
                 font-variant-numeric: tabular-nums;
                 font-size: 0.72rem;
                 font-weight: 600;
-                color: #b54f17;
+                color: #2f6bdd;
                 min-width: 38px;
                 text-align: right;
             }
@@ -680,10 +680,10 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
                 stroke-width: 1.5;
                 opacity: 0.85;
             }
-            .diag-edge-flow.is-active { stroke: #d9713e; opacity: 1; }
+            .diag-edge-flow.is-active { stroke: #5b8def; opacity: 1; }
             .diag-edge-flow.is-off { stroke: #cfcac0; stroke-dasharray: 4 4; }
             .diag-edge-trash { stroke: #b91c1c; stroke-dasharray: 5 4; opacity: 0.65; }
-            .diag-edge-offer { stroke: #b54f17; stroke-width: 1.3; opacity: 0.7; }
+            .diag-edge-offer { stroke: #2f6bdd; stroke-width: 1.3; opacity: 0.7; }
             .diag-edge-no-target { stroke: #cfcac0; stroke-dasharray: 3 3; opacity: 0.5; }
 
             /* Edge label badge */
@@ -704,7 +704,7 @@ $renderSettings = function () use ($campaign, $action, $errors, $csrf_token, $ti
                 box-shadow: 0 1px 3px rgba(26,25,23,0.15);
             }
             .diag-edge-label.is-trash { background: #b91c1c; }
-            .diag-edge-label.is-offer { background: #b54f17; }
+            .diag-edge-label.is-offer { background: #2f6bdd; }
             .diag-edge-label.is-off   { background: #cfcac0; color: #6b6457; }
         </style>
 

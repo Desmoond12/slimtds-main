@@ -83,7 +83,7 @@ Alpine.data('statsChart', (data) => ({
       legend: { textStyle: { color: '#3f3a32' }, top: 0 },
       tooltip: { trigger: 'axis' },
       series: [
-        { name: 'Clicks', type: 'line', smooth: true, data: data.points.map(p => [p.hour, p.clicks]), color: '#b54f17' },
+        { name: 'Clicks', type: 'line', smooth: true, data: data.points.map(p => [p.hour, p.clicks]), color: '#2f6bdd' },
         { name: 'Unique', type: 'line', smooth: true, data: data.points.map(p => [p.hour, p.uniq]),   color: '#0d6e6e' },
         { name: 'Bots',   type: 'line', smooth: true, data: data.points.map(p => [p.hour, p.bot]),    color: '#a8a399' },
       ],
@@ -117,14 +117,14 @@ Alpine.data('clicksTimeline', (data) => ({
         splitLine: { lineStyle: { color: '#ece8df', type: 'dashed' } },
       },
       legend: { textStyle: { color: '#6b6457', fontSize: 11 }, top: 0, right: 8, itemHeight: 8, itemWidth: 14 },
-      tooltip: { trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: '#b54f17', width: 1, type: 'dashed' } } },
+      tooltip: { trigger: 'axis', axisPointer: { type: 'line', lineStyle: { color: '#2f6bdd', width: 1, type: 'dashed' } } },
       series: [
         {
           name: 'Clicks', type: 'line', smooth: true, showSymbol: false,
           data: data.points.map(p => [p.hour, p.clicks]),
-          lineStyle: { width: 2, color: '#b54f17' },
-          itemStyle: { color: '#b54f17' },
-          areaStyle: { color: 'rgba(181, 79, 23, 0.14)' },
+          lineStyle: { width: 2, color: '#2f6bdd' },
+          itemStyle: { color: '#2f6bdd' },
+          areaStyle: { color: 'rgba(47, 107, 221, 0.14)' },
         },
         {
           name: 'Unique', type: 'line', smooth: true, showSymbol: false,
@@ -178,8 +178,8 @@ Alpine.data('pixelTimeline', (data) => ({
         {
           name: 'Unique', type: 'line', smooth: true, showSymbol: false,
           data: data.points.map(p => [p.hour, p.uniq]),
-          lineStyle: { width: 1.5, color: '#b54f17', type: 'dashed' },
-          itemStyle: { color: '#b54f17' },
+          lineStyle: { width: 1.5, color: '#2f6bdd', type: 'dashed' },
+          itemStyle: { color: '#2f6bdd' },
         },
       ],
     })

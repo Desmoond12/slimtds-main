@@ -105,7 +105,7 @@
 
         <!-- Top: small chip mark -->
         <div style="position:relative;display:flex;align-items:center;gap:10px;font-family:var(--font-mono);font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:#a8a399">
-            <span style="display:inline-block;width:5px;height:5px;background:#d9713e"></span>
+            <span style="display:inline-block;width:5px;height:5px;background:#5b8def"></span>
             <span><?= e(t('auth.brand_eyebrow')) ?></span>
         </div>
 
@@ -113,7 +113,7 @@
         <div style="position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:24px;margin:auto 0">
             <?php $size=120; $variant='dark'; require __DIR__ . '/../_partials/chip-mark.php'; ?>
             <div>
-                <p style="font-family:var(--font-display);font-size:4rem;font-weight:600;color:#fafaf7;line-height:0.95;letter-spacing:-0.04em;margin:0">AffMoment<span style="color:#d9713e">/</span>TDS</p>
+                <p style="font-family:var(--font-display);font-size:4rem;font-weight:600;color:#fafaf7;line-height:0.95;letter-spacing:-0.04em;margin:0">AffMoment<span style="color:#5b8def">/</span>TDS</p>
                 <p style="font-family:var(--font-sans);font-size:0.95rem;color:#a8a399;margin:14px 0 0;line-height:1.6;max-width:36ch">
                     <?= e(t('auth.brand_tagline')) ?>
                 </p>
@@ -122,11 +122,11 @@
 
         <!-- Bottom: meta strip -->
         <div style="position:relative;display:flex;gap:24px;font-family:var(--font-mono);font-size:0.7rem;color:#5c564d;letter-spacing:0.04em">
-            <span><span style="color:#d9713e">·</span> campaigns</span>
-            <span><span style="color:#d9713e">·</span> offers</span>
-            <span><span style="color:#d9713e">·</span> flows</span>
-            <span><span style="color:#d9713e">·</span> pixel</span>
-            <span><span style="color:#d9713e">·</span> postback</span>
+            <span><span style="color:#5b8def">·</span> campaigns</span>
+            <span><span style="color:#5b8def">·</span> offers</span>
+            <span><span style="color:#5b8def">·</span> flows</span>
+            <span><span style="color:#5b8def">·</span> pixel</span>
+            <span><span style="color:#5b8def">·</span> postback</span>
         </div>
     </div>
 

@@ -31,7 +31,9 @@ foreach ($events as $r) {
 }
 $totCntPct = $deltaPct((float)$sumT, (float)$sumP);
 $totPayPct = $deltaPct($sumTPay, $sumPPay);
-$warnStyle = 'background:color-mix(in srgb, var(--color-terra-400) 12%, transparent)';
+// Discrepancies read as "attention" — warm amber, not the (now blue) brand
+// accent, which would look like ordinary info rather than a flag.
+$warnStyle = 'background:color-mix(in srgb, var(--color-warn) 12%, transparent)';
 ?>
 <div style="max-width:980px">
     <nav style="font-size:0.8rem;color:var(--color-stone-400);font-family:var(--font-sans);margin-bottom:20px">
@@ -69,12 +71,12 @@ $warnStyle = 'background:color-mix(in srgb, var(--color-terra-400) 12%, transpar
         <div class="form-section" style="margin:0">
             <span class="form-section-label"><?= e(t('recon.total_events')) ?></span>
             <div style="font-size:1.25rem;font-variant-numeric:tabular-nums"><?= $sumT ?> <span style="color:var(--color-stone-400)">/</span> <?= $sumP ?></div>
-            <p class="form-help" style="margin-top:4px"><?= e(t('recon.ours_vs_pp')) ?><?php if ($totCntPct !== null): ?> · Δ <?= e($fmtPct($totCntPct)) ?><?php endif; ?></p>
+            <p class="form-help" style="margin-top:4px"><?= e(t('recon.ours_vs_pp')) ?><?php if ($totCntPct !== null): ?> · <span style="<?= $totCntPct > $threshold ? 'color:var(--color-warn);font-weight:600' : '' ?>">Δ <?= e($fmtPct($totCntPct)) ?></span><?php endif; ?></p>
         </div>
         <div class="form-section" style="margin:0">
             <span class="form-section-label"><?= e(t('recon.total_payout')) ?></span>
             <div style="font-size:1.25rem;font-variant-numeric:tabular-nums"><?= e(number_format($sumTPay, 2, '.', ' ')) ?> <span style="color:var(--color-stone-400)">/</span> <?= e(number_format($sumPPay, 2, '.', ' ')) ?></div>
-            <p class="form-help" style="margin-top:4px"><?= e(t('recon.ours_vs_pp')) ?><?php if ($totPayPct !== null): ?> · Δ <?= e($fmtPct($totPayPct)) ?><?php endif; ?></p>
+            <p class="form-help" style="margin-top:4px"><?= e(t('recon.ours_vs_pp')) ?><?php if ($totPayPct !== null): ?> · <span style="<?= $totPayPct > $threshold ? 'color:var(--color-warn);font-weight:600' : '' ?>">Δ <?= e($fmtPct($totPayPct)) ?></span><?php endif; ?></p>
         </div>
     </div>
 
@@ -108,10 +110,10 @@ $warnStyle = 'background:color-mix(in srgb, var(--color-terra-400) 12%, transpar
                             <td><span class="meta-mono"><?= e($r['event_type']) ?></span></td>
                             <td style="text-align:right;font-variant-numeric:tabular-nums"><?= e($fmtInt($r['tracker_count'])) ?></td>
                             <td style="text-align:right;font-variant-numeric:tabular-nums"><?= e($fmtInt($r['pp_count'])) ?></td>
-                            <td style="text-align:right;font-variant-numeric:tabular-nums;<?= $cntPct !== null && $cntPct > $threshold ? 'color:var(--color-terra-500);font-weight:600' : 'color:var(--color-stone-400)' ?>"><?= e($fmtPct($cntPct)) ?></td>
+                            <td style="text-align:right;font-variant-numeric:tabular-nums;<?= $cntPct !== null && $cntPct > $threshold ? 'color:var(--color-warn);font-weight:600' : 'color:var(--color-stone-400)' ?>"><?= e($fmtPct($cntPct)) ?></td>
                             <td style="text-align:right;font-variant-numeric:tabular-nums"><?= e($fmtMoney($r['tracker_payout'])) ?></td>
                             <td style="text-align:right;font-variant-numeric:tabular-nums"><?= e($fmtMoney($r['pp_payout'])) ?></td>
-                            <td style="text-align:right;font-variant-numeric:tabular-nums;<?= $payPct !== null && $payPct > $threshold ? 'color:var(--color-terra-500);font-weight:600' : 'color:var(--color-stone-400)' ?>"><?= e($fmtPct($payPct)) ?></td>
+                            <td style="text-align:right;font-variant-numeric:tabular-nums;<?= $payPct !== null && $payPct > $threshold ? 'color:var(--color-warn);font-weight:600' : 'color:var(--color-stone-400)' ?>"><?= e($fmtPct($payPct)) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>
@@ -146,7 +148,7 @@ $warnStyle = 'background:color-mix(in srgb, var(--color-terra-400) 12%, transpar
                             <td class="meta-mono" style="white-space:nowrap"><?= e($r['d']) ?></td>
                             <td style="text-align:right;font-variant-numeric:tabular-nums"><?= e($fmtInt($r['tracker_clicks'])) ?></td>
                             <td style="text-align:right;font-variant-numeric:tabular-nums"><?= e($fmtInt($r['pp_clicks'])) ?></td>
-                            <td style="text-align:right;font-variant-numeric:tabular-nums;<?= $isWarn ? 'color:var(--color-terra-500);font-weight:600' : 'color:var(--color-stone-400)' ?>"><?= $r['pp_clicks'] === null ? '' : e($fmtPct($pct)) ?></td>
+                            <td style="text-align:right;font-variant-numeric:tabular-nums;<?= $isWarn ? 'color:var(--color-warn);font-weight:600' : 'color:var(--color-stone-400)' ?>"><?= $r['pp_clicks'] === null ? '' : e($fmtPct($pct)) ?></td>
                         </tr>
                     <?php endforeach; ?>
                     </tbody>

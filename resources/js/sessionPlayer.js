@@ -37,7 +37,7 @@ window.affMomentSessionPlayer = function (el, eventsUrl) {
       var playBtn = mkBtn('❚❚ Pause')
       var seek = document.createElement('input')
       seek.type = 'range'; seek.min = '0'; seek.max = '1000'; seek.value = '0'; seek.step = '1'
-      seek.style.cssText = 'flex:1;min-width:220px;cursor:pointer;accent-color:var(--accent,#b54f17)'
+      seek.style.cssText = 'flex:1;min-width:220px;cursor:pointer;accent-color:var(--accent,#2f6bdd)'
       var timeLabel = document.createElement('span')
       timeLabel.style.cssText = 'font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted,#6b6457);min-width:96px;text-align:right'
       var speedWrap = document.createElement('span')

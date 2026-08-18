@@ -17,17 +17,31 @@
   --color-stone-800: #2a2720;
   --color-stone-900: #1a1917;
 
-  /* Terracotta accent */
-  --color-terra-50:  #fdf3ee;
-  --color-terra-100: #fae4d3;
-  --color-terra-200: #f4c5a0;
-  --color-terra-300: #ec9e6a;
-  --color-terra-400: #d9713e;
-  --color-terra-500: #b54f17;
-  --color-terra-600: #923e12;
-  --color-terra-700: #70300e;
-  --color-terra-800: #4e220a;
-  --color-terra-900: #2e1306;
+  /* Blue accent (was terracotta). The scale is defined once here; the
+     legacy --color-terra-* names are kept as aliases below so every existing
+     reference across the views keeps working without a sweep. */
+  --color-accent-50:  #eff5ff;
+  --color-accent-100: #dbe8fe;
+  --color-accent-200: #bfd7fe;
+  --color-accent-300: #93b8fd;
+  --color-accent-400: #5b8def;
+  --color-accent-500: #2f6bdd;
+  --color-accent-600: #2154c0;
+  --color-accent-700: #1b429a;
+  --color-accent-800: #17357a;
+  --color-accent-900: #132a5e;
+
+  /* Back-compat aliases — terra == accent now. */
+  --color-terra-50:  var(--color-accent-50);
+  --color-terra-100: var(--color-accent-100);
+  --color-terra-200: var(--color-accent-200);
+  --color-terra-300: var(--color-accent-300);
+  --color-terra-400: var(--color-accent-400);
+  --color-terra-500: var(--color-accent-500);
+  --color-terra-600: var(--color-accent-600);
+  --color-terra-700: var(--color-accent-700);
+  --color-terra-800: var(--color-accent-800);
+  --color-terra-900: var(--color-accent-900);
 
   /* Dusty teal accent-2 — status / active nav */
   --color-teal-active: #0d6e6e;
@@ -187,7 +201,7 @@ html[data-theme="dark"] {
     outline: none;
   }
   .input::placeholder { color: var(--color-faint); opacity: 0.7; }
-  .input:focus { border-color: var(--color-terra-500); box-shadow: 0 0 0 3px rgba(181, 79, 23, 0.12); }
+  .input:focus { border-color: var(--color-terra-500); box-shadow: 0 0 0 3px rgba(47, 107, 221, 0.12); }
   .input:hover:not(:focus) { border-color: var(--color-stone-400); }
   select.input { appearance: auto; padding-right: 28px; }
   textarea.input { resize: vertical; font-family: var(--font-mono); font-size: 0.8125rem; }
@@ -549,7 +563,7 @@ html[data-theme="dark"] {
     outline: none;
     transition: border-color 100ms ease, box-shadow 150ms ease;
   }
-  .input-sm:focus { border-color: var(--color-terra-500); box-shadow: 0 0 0 3px rgba(181, 79, 23, 0.12); }
+  .input-sm:focus { border-color: var(--color-terra-500); box-shadow: 0 0 0 3px rgba(47, 107, 221, 0.12); }
   .input-sm:hover:not(:focus) { border-color: var(--color-stone-400); }
 
   .input-mono { font-family: var(--font-mono); font-size: 0.82rem; }
@@ -641,7 +655,7 @@ html[data-theme="dark"] {
     overflow: hidden;
     transition: border-color 150ms ease, box-shadow 150ms ease;
   }
-  .copyable:focus-within { border-color: var(--color-terra-500); box-shadow: 0 0 0 3px rgba(181, 79, 23, 0.12); }
+  .copyable:focus-within { border-color: var(--color-terra-500); box-shadow: 0 0 0 3px rgba(47, 107, 221, 0.12); }
   .copyable input {
     flex: 1; min-width: 0;
     padding: 8px 12px;
@@ -951,11 +965,11 @@ html[data-theme="dark"] {
     cursor: pointer;
   }
   a.cell-filter:hover {
-    background: var(--color-terra-50, #fff8f1);
-    box-shadow: inset 0 -1px 0 var(--color-terra-300, #d9713e);
+    background: var(--color-terra-50, #eff5ff);
+    box-shadow: inset 0 -1px 0 var(--color-terra-300, #5b8def);
   }
   a.cell-filter:focus-visible {
-    outline: 2px solid var(--color-terra-400, #d9713e);
+    outline: 2px solid var(--color-terra-400, #5b8def);
     outline-offset: 1px;
   }
 

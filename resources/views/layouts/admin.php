@@ -91,7 +91,7 @@
         $stats = \App\Shared\System\SystemStats::snapshot();
         $gb = static fn (int $b): string => number_format($b / (1024 ** 3), 1);
         $bar = static function (int $pct): string {
-            $c = $pct >= 90 ? 'var(--color-danger,#c0392b)' : ($pct >= 75 ? 'var(--color-terra-500,#b54f17)' : 'var(--color-terra-400,#cf7a4a)');
+            $c = $pct >= 90 ? 'var(--color-danger,#c0392b)' : ($pct >= 75 ? 'var(--color-terra-500,#2f6bdd)' : 'var(--color-terra-400,#5b8def)');
             return '<div style="height:4px;border-radius:2px;background:var(--color-stone-200,#e7e2da);overflow:hidden">'
                  . '<div style="height:100%;width:' . max(0, min(100, $pct)) . '%;background:' . $c . '"></div></div>';
         };
