@@ -26,6 +26,10 @@ cd "$(dirname "$0")/.."
 # ── 1. System packages ────────────────────────────────────────────────────
 say "Шаг 1/6 — базовые пакеты (make, git, curl)"
 export DEBIAN_FRONTEND=noninteractive
+# Some VPS resolve to IPv6 but have no working IPv6 route, which makes apt/curl
+# "could not resolve host" intermittently. Force IPv4 for package downloads —
+# non-destructive, doesn't touch the rest of the network stack.
+echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
 apt-get update -qq
 apt-get install -y -qq make git curl ca-certificates gnupg >/dev/null
 ok "make / git / curl готовы"
@@ -35,16 +39,28 @@ say "Шаг 2/6 — Docker"
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
     ok "Docker уже установлен"
 else
-    install -m 0755 -d /etc/apt/keyrings
-    . /etc/os-release
-    distro="${ID:-ubuntu}"; [ "$distro" = "debian" ] || distro="ubuntu"
-    curl -fsSL "https://download.docker.com/linux/$distro/gpg" | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    chmod a+r /etc/apt/keyrings/docker.gpg
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$distro ${VERSION_CODENAME} stable" \
-        > /etc/apt/sources.list.d/docker.list
-    apt-get update -qq
-    apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
-    ok "Docker установлен"
+    # Prefer the distro's own docker.io + docker-compose-v2: they come from the
+    # Ubuntu/Debian mirrors the box already reaches, so this sidesteps
+    # download.docker.com entirely (that host is IPv6-flaky on some VPS and
+    # stalls the official-repo path). Fall back to Docker's official repo only
+    # if the distro packages aren't available.
+    if apt-get install -y -qq docker.io docker-compose-v2 >/dev/null 2>&1; then
+        systemctl enable --now docker >/dev/null 2>&1 || true
+        ok "Docker установлен (из репозитория дистрибутива)"
+    else
+        warn "docker.io недоступен — ставлю из официального репозитория Docker"
+        install -m 0755 -d /etc/apt/keyrings
+        rm -f /etc/apt/keyrings/docker.gpg
+        . /etc/os-release
+        distro="${ID:-ubuntu}"; [ "$distro" = "debian" ] || distro="ubuntu"
+        curl -fsSL --ipv4 "https://download.docker.com/linux/$distro/gpg" | gpg --dearmor --yes -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/$distro ${VERSION_CODENAME} stable" \
+            > /etc/apt/sources.list.d/docker.list
+        apt-get update -qq
+        apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-compose-plugin >/dev/null
+        ok "Docker установлен (из официального репозитория)"
+    fi
 fi
 
 # ── 3. .env ───────────────────────────────────────────────────────────────
