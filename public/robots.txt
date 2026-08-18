@@ -1,0 +1,7 @@
+# Tracker domain — no public content to index (admin panel, pixel/postback
+# endpoints, redirect slugs). Closed to all crawlers by default.
+# NOTE: robots.txt controls crawling/indexing only, not whether a request is
+# answered — is_bot cloaking flows still serve Googlebot as configured. If a
+# specific slug must be crawlable, add an Allow line below it.
+User-agent: *
+Disallow: /

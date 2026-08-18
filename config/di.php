@@ -55,6 +55,7 @@ return static function (): \DI\Container {
         \App\Admin\Middleware\CsrfMiddleware::class => \DI\autowire(),
         \App\Admin\Middleware\RateLimitMiddleware::class => \DI\autowire(),
         \App\Admin\Middleware\AuthMiddleware::class => \DI\autowire(),
+        \App\Admin\Middleware\NoIndexMiddleware::class => \DI\autowire(),
         \App\Admin\Controller\PasswordController::class => \DI\autowire(),
         \App\Admin\Repository\CampaignRepository::class => \DI\autowire(),
         \App\Admin\Form\CampaignForm::class => \DI\autowire(),

@@ -20,6 +20,12 @@ return static function (App $app): void {
         return $response->withHeader('Content-Type', 'application/json');
     });
 
+    // NOTE: /robots.txt is served as a static file by Caddy (public/robots.txt,
+    // matched in every Caddyfile's @static block) before any request reaches
+    // PHP — no app route for it. It blanket-disallows crawling of the tracker
+    // domain. The /admin X-Robots-Tag header (NoIndexMiddleware) is the belt to
+    // that suspenders in case robots.txt is ignored.
+
     // Корень — пока редирект в админку
     $app->get('/', function (Request $request, Response $response): Response {
         return $response->withHeader('Location', '/admin')->withStatus(302);
@@ -200,6 +206,7 @@ return static function (App $app): void {
             return $view->respond($response, 'admin/dashboard', $data);
         });
     })
+        ->add(\App\Admin\Middleware\NoIndexMiddleware::class)
         ->add(\App\Admin\Middleware\PasswordChangeRequiredMiddleware::class)
         ->add(AuthMiddleware::class)
         ->add(CsrfMiddleware::class)
