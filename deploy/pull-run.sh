@@ -55,9 +55,12 @@ esac
 # ── Up (no build — use the pulled image) ───────────────────────────────────
 say "Шаг 3/5 — поднимаю контейнеры (без сборки)"
 export COMPOSE_PARALLEL_LIMIT=1
-# db + geoipupdate are small external images; pull them serially first.
-retry 8 8 docker compose $COMPOSE pull --ignore-buildable || warn "часть образов не дотянулась — up попробует ещё"
-retry 6 10 docker compose $COMPOSE up -d --no-build || die "не удалось поднять контейнеры"
+# Straight to up with the local images. --no-build stops it from rebuilding the
+# app; it still pulls the small external images (db/geoipupdate) if they aren't
+# cached yet, but never tries to pull our local-only slimtds:local tag (which
+# is what used to hang the deploy). The whole up is retried in case an external
+# pull hits the flaky DNS.
+retry 6 15 docker compose $COMPOSE up -d --no-build || die "не удалось поднять контейнеры"
 ok "контейнеры подняты"
 
 # ── DB + admin ─────────────────────────────────────────────────────────────
