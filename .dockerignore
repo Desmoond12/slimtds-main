@@ -7,3 +7,14 @@ site/
 # app binaries + the WSL VM disk (tens of GB) — never part of the build context.
 docker-app/
 docker-data/
+
+# node_modules must never enter the build context: bun install runs inside the
+# assets-builder stage, so host node_modules is redundant — and worse, it can
+# carry broken symlinks (e.g. node_modules/.bin/jiti) that make BuildKit abort
+# context load with "invalid file request". vendor/ and .git/ are likewise
+# rebuilt/unneeded in-image and only bloat the context.
+node_modules/
+vendor/
+.git/
+var/
+*.log
