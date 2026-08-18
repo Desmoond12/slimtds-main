@@ -111,6 +111,9 @@ return static function (App $app): void {
         $g->post('/networks/{id}/delete',        [\App\Admin\Controller\AffiliateNetworkController::class, 'delete']);
 
         // PP report imports (CSV upload → column mapping → confirm) — foundation for Reconciliation Center
+        // Tracker-vs-PP reconciliation over imported reports
+        $g->get('/networks/{id}/reconciliation',                 [\App\Admin\Controller\ReconciliationController::class, 'show']);
+
         $g->get('/networks/{id}/reports',                        [\App\Admin\Controller\PpReportController::class, 'index']);
         $g->post('/networks/{id}/reports/preview',                [\App\Admin\Controller\PpReportController::class, 'preview']);
         $g->post('/networks/{id}/reports/confirm',                [\App\Admin\Controller\PpReportController::class, 'confirm']);

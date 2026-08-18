@@ -258,6 +258,28 @@ pp_reports:
   error_too_many_rows: 'Too many rows (max {max}) — split the file and upload in parts.'
   error_no_date_column: Pick which column is the date.
 
+recon:
+  title: Reconciliation
+  intro: 'Tracker vs partner-network numbers, from the reports imported on the PP reports page. Rows whose count or payout delta exceeds the threshold are highlighted.'
+  from: From
+  to: To
+  threshold: 'Threshold, %'
+  apply: Apply
+  total_events: Events (total)
+  total_payout: Payout (total)
+  ours_vs_pp: ours / PP
+  events_label: Conversions by day and event
+  clicks_label: Clicks by day
+  no_data: 'No data in this range. Import a partner report first (PP reports page).'
+  col:
+    date: Date
+    event: Event
+    ours: Ours
+    pp: PP
+    ours_payout: Ours, payout
+    pp_payout: PP, payout
+  tz_note: 'Both sides bucket by calendar date: ours in the tracker timezone, the network''s in whatever timezone their report was built in. A ±1 day smear around midnight is normal; judge trends and multi-day totals, not single midnight-adjacent rows.'
+
 flows:
   title: Flows
   list_title: 'Flows: {campaign}'

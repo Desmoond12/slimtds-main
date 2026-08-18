@@ -17,7 +17,10 @@ $titleKey = $network === null ? 'networks.create' : 'networks.edit';
     <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
         <h1 class="page-title-sm"><?= e(t($titleKey)) ?></h1>
         <?php if ($network !== null): ?>
-            <a href="<?= e(url('/admin/networks/' . $network->id . '/reports')) ?>" class="btn-secondary" style="font-size:0.8rem"><?= e(t('pp_reports.title')) ?> →</a>
+            <span style="display:flex;gap:8px">
+                <a href="<?= e(url('/admin/networks/' . $network->id . '/reports')) ?>" class="btn-secondary" style="font-size:0.8rem"><?= e(t('pp_reports.title')) ?> →</a>
+                <a href="<?= e(url('/admin/networks/' . $network->id . '/reconciliation')) ?>" class="btn-secondary" style="font-size:0.8rem"><?= e(t('recon.title')) ?> →</a>
+            </span>
         <?php endif; ?>
     </div>
 

@@ -67,6 +67,8 @@ return static function (): \DI\Container {
         \App\Admin\Controller\AffiliateNetworkController::class => \DI\autowire(),
         \App\Admin\Repository\PpReportRepository::class => \DI\autowire(),
         \App\Admin\Controller\PpReportController::class => \DI\autowire(),
+        \App\Admin\Repository\ReconciliationRepository::class => \DI\autowire(),
+        \App\Admin\Controller\ReconciliationController::class => \DI\autowire(),
         \App\Admin\Repository\FlowRepository::class => \DI\autowire(),
         \App\Admin\Form\FlowForm::class => \DI\autowire(),
         \App\Admin\Controller\FlowController::class => \DI\autowire(),

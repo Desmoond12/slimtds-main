@@ -61,7 +61,8 @@ require __DIR__ . '/../../_partials/page-header.php';
                                 <span class="badge <?= $n->isActive ? 'badge-success' : 'badge-ghost' ?>"><?= e($n->isActive ? t('offers.status_active') : t('offers.status_inactive')) ?></span>
                             </td>
                             <td class="row-actions" style="text-align:right;white-space:nowrap">
-                                <a href="<?= e(url('/admin/networks/' . $n->id . '/edit')) ?>" class="action-link"><?= e(t('campaigns.edit')) ?></a>
+                                <a href="<?= e(url('/admin/networks/' . $n->id . '/reconciliation')) ?>" class="action-link"><?= e(t('recon.title')) ?></a>
+                                <a href="<?= e(url('/admin/networks/' . $n->id . '/edit')) ?>" class="action-link" style="margin-left:12px"><?= e(t('campaigns.edit')) ?></a>
                                 <a href="<?= e(url('/admin/networks/' . $n->id . '/delete')) ?>" class="danger-link" style="margin-left:12px"><?= e(t('campaigns.delete')) ?></a>
                             </td>
                         </tr>
