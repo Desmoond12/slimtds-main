@@ -33,6 +33,11 @@
 # Hourly system alerts
 0 * * * * /usr/local/bin/php /app/bin/console telegram:alerts
 
+# Golden Click — synthetic canary of the click→flow→offer routing chain every
+# 5 min (in-process, no stats pollution). Pages Telegram on breakage (prod only).
+# Set GOLDEN_SLUG in .env to a campaign slug to enable the full routing check.
+*/5 * * * * /usr/local/bin/php /app/bin/console monitor:golden-click
+
 # Daily DB backup at 01:00 UTC
 0 1 * * * /usr/local/bin/php /app/bin/console db:backup
 

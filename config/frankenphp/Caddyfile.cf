@@ -41,10 +41,10 @@
     #   - localhost     via an SSH tunnel: `ssh -L 8080:localhost:80 root@5.252.20.235`
     #                   then open http://localhost:8080/admin — traffic is
     #                   encrypted end-to-end by SSH (closes the plaintext-HTTP hop).
-    #   - $ADMIN_HOST   optional dedicated admin hostname (e.g. a CF-proxied
-    #                   admin.<domain> for real HTTPS); set the env to enable.
+    # To grant a dedicated admin hostname later (e.g. a CF-proxied admin.<domain>
+    # for real HTTPS), add it to the host list below: `not host 5.252.20.235 localhost admin.example`.
     @admin_hidden {
-        not host 5.252.20.235 localhost {$ADMIN_HOST:5.252.20.235}
+        not host 5.252.20.235 localhost
         path /admin /admin/* /
     }
     handle @admin_hidden {
