@@ -48,7 +48,13 @@
         path /admin /admin/* /
     }
     handle @admin_hidden {
-        respond 404
+        # Must send a Content-Type: an empty body with no type + the global
+        # X-Content-Type-Options: nosniff makes browsers DOWNLOAD the 404 as a
+        # file named after the path (e.g. "admin") instead of rendering it —
+        # which both breaks the page and leaks the /admin path. Serve a blank
+        # text/html 404 so it renders as an ordinary not-found, revealing nothing.
+        header Content-Type "text/html; charset=utf-8"
+        respond "<!doctype html><title>404 Not Found</title>" 404
     }
 
     @static path /assets/* /p.js /favicon.ico /robots.txt
