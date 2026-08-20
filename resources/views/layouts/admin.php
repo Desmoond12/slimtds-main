@@ -64,6 +64,7 @@
             $navItems = [
                 ['/admin',              t('menu.dashboard'),   '<rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/>'],
                 ['/admin/campaigns',    t('menu.campaigns'),   '<path d="M5 4h11l3 4-3 4H5z"/><path d="M5 4v16"/>'],
+                ['/admin/funnels/new',  t('menu.new_funnel'),  '<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>'],
                 ['/admin/offers',       t('menu.offers'),      '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M3 11h18M9 7V4h6v3"/>'],
                 ['/admin/networks',     t('menu.networks'),    '<circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="12" cy="18" r="3"/><path d="M8.5 7.5L10 16M15.5 7.5L14 16M9 6h6"/>'],
                 ['/admin/flows',        t('menu.flows'),       '<path d="M3 6h6l3 12h9"/><path d="M14 6h7"/><circle cx="9" cy="6" r="2"/><circle cx="18" cy="6" r="2"/>'],
@@ -181,6 +182,7 @@
     $cmdkItems = [
         ['label' => t('menu.dashboard'),   'href' => url('/admin'),              'group' => 'Pages',   'meta' => ''],
         ['label' => t('menu.campaigns'),   'href' => url('/admin/campaigns'),    'group' => 'Pages',   'meta' => ''],
+        ['label' => t('menu.new_funnel'),  'href' => url('/admin/funnels/new'),  'group' => 'Actions', 'meta' => ''],
         ['label' => 'New campaign',        'href' => url('/admin/campaigns/new'),'group' => 'Actions', 'meta' => ''],
         ['label' => t('menu.offers'),      'href' => url('/admin/offers'),       'group' => 'Pages',   'meta' => ''],
         ['label' => 'New offer',           'href' => url('/admin/offers/new'),   'group' => 'Actions', 'meta' => ''],

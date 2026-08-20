@@ -28,6 +28,7 @@ auth:
 menu:
   dashboard: Dashboard
   campaigns: Campaigns
+  new_funnel: New funnel
   offers: Offers
   networks: Networks
   flows: Flows
@@ -38,6 +39,38 @@ menu:
   statistics: Statistics
   backups: Backups
   settings: Settings
+
+funnel:
+  title: New funnel
+  eyebrow: quick start
+  intro: One step instead of four tabs. Pick a preset, fill a short form — the tracker creates the campaign, offer(s) and flows in the right order, transactionally. Edit as usual afterwards.
+  preset: Preset
+  preset_single: Single offer
+  preset_single_hint: All traffic to one brand, worldwide. Simplest.
+  preset_geo: Geo-split
+  preset_geo_hint: Bots → safe, by geo → the right brand, the rest → fallback.
+  preset_geo_rec: iGaming standard
+  preset_ab: A/B two offers
+  preset_ab_hint: Splits traffic between two brands by weight.
+  section_campaign: Campaign
+  campaign_name: Campaign name
+  campaign_name_hint: The slug is generated automatically.
+  section_offer: Brand offer
+  offer_url: Offer URL
+  offer_url_a: Offer URL (A)
+  offer_url_b: Second offer (B)
+  offer_url_macro: subid={click_id} is appended automatically — so the postback can attribute the conversion
+  weights: A/B weights
+  section_geo: Geo
+  geo: Accepted countries
+  geo_hint: Country codes, comma-separated, e.g. IT, DE, AT — where the brand pays.
+  section_cloak: Cloaking (bot protection)
+  cloak: Hide from bots
+  cloak_hint: Bots and crawlers go to the official site (or a blank stub), never to the offer.
+  official_url: Brand official site URL
+  official_url_hint: Empty = bots go to a neutral stub.
+  submit: Create funnel
+  cancel: Cancel
 
 dashboard:
   auth_events: Auth activity

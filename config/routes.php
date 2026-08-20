@@ -102,6 +102,10 @@ return static function (App $app): void {
         // Per-campaign stats page
         $g->get('/campaigns/{cid}/stats', [\App\Admin\Controller\CampaignController::class, 'stats']);
 
+        // Funnel quick-start wizard — creates campaign + offer(s) + flows in one transaction
+        $g->get('/funnels/new',                  [\App\Admin\Controller\FunnelWizardController::class, 'new_']);
+        $g->post('/funnels',                     [\App\Admin\Controller\FunnelWizardController::class, 'create']);
+
         // Offers — global, no campaign coupling
         $g->get('/offers',                       [\App\Admin\Controller\OfferController::class, 'all']);
         $g->get('/offers/new',                   [\App\Admin\Controller\OfferController::class, 'new_']);

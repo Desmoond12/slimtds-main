@@ -60,6 +60,7 @@ return static function (): \DI\Container {
         \App\Admin\Repository\CampaignRepository::class => \DI\autowire(),
         \App\Admin\Form\CampaignForm::class => \DI\autowire(),
         \App\Admin\Controller\CampaignController::class => \DI\autowire(),
+        \App\Admin\Controller\FunnelWizardController::class => \DI\autowire(),
         \App\Admin\Repository\OfferRepository::class => \DI\autowire(),
         \App\Admin\Form\OfferForm::class => \DI\autowire(),
         \App\Admin\Controller\OfferController::class => \DI\autowire(),

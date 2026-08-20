@@ -28,6 +28,7 @@ auth:
 menu:
   dashboard: Панель
   campaigns: Кампании
+  new_funnel: Новая связка
   offers: Оферы
   networks: Партнёрские сети
   flows: Потоки
@@ -38,6 +39,38 @@ menu:
   statistics: Статистика
   backups: Бэкапы
   settings: Настройки
+
+funnel:
+  title: Новая связка
+  eyebrow: быстрый старт
+  intro: Один шаг вместо четырёх вкладок. Выбери пресет, заполни короткую форму — трекер создаст кампанию, оффер(ы) и потоки в правильном порядке, транзакционно. Дальше правишь как обычно.
+  preset: Пресет
+  preset_single: Один оффер
+  preset_single_hint: Весь трафик на один бренд, worldwide. Самое простое.
+  preset_geo: Гео-сплит
+  preset_geo_hint: Боты → безопасно, по гео → нужный бренд, остальное → фолбэк.
+  preset_geo_rec: стандарт гембла
+  preset_ab: A/B двух офферов
+  preset_ab_hint: Делит трафик между двумя брендами по весам.
+  section_campaign: Кампания
+  campaign_name: Название кампании
+  campaign_name_hint: slug сгенерируется автоматически.
+  section_offer: Оффер бренда
+  offer_url: Ссылка оффера
+  offer_url_a: Ссылка оффера (A)
+  offer_url_b: Второй оффер (B)
+  offer_url_macro: макрос subid={click_id} добавится автоматически — постбэк сможет привязать деп
+  weights: Веса A/B
+  section_geo: Гео
+  geo: Принимаемые страны
+  geo_hint: Коды стран через запятую, напр. IT, DE, AT — где бренд платит.
+  section_cloak: Клоака (защита от ботов)
+  cloak: Прятать от ботов
+  cloak_hint: Боты и краулеры уходят на офиц.сайт (или пустую заглушку), никогда на оффер.
+  official_url: URL офиц. сайта бренда
+  official_url_hint: Пусто = боты уходят на нейтральную заглушку.
+  submit: Создать связку
+  cancel: Отмена
 
 dashboard:
   auth_events: Активность входа
