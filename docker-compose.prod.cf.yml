@@ -3,6 +3,7 @@ services:
     environment:
       DEPLOY_MODE: ${DEPLOY_MODE:-cf_full}
       APP_ENV: prod
+      APP_DEBUG: "false"
     ports:
       - "80:80"
       - "443:443"

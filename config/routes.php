@@ -59,11 +59,18 @@ return static function (App $app): void {
             return $view->respond($response, 'admin/login', $data);
         });
 
-        // Language switch — sets cookie, redirects to Referer (outside auth gate)
+        // Language switch — sets cookie, redirects back. Referer is only honoured
+        // when it points at our own host; otherwise fall back to /admin. Without
+        // this same-origin check the route is an open redirect (it echoes an
+        // attacker-supplied Referer straight into Location).
         $g->get('/lang/{lang:ru|en}', function (Request $request, Response $response, string $lang): Response {
+            $referer = $request->getHeaderLine('Referer');
+            $refHost = $referer !== '' ? parse_url($referer, PHP_URL_HOST) : null;
+            $sameOrigin = is_string($refHost) && strcasecmp($refHost, $request->getUri()->getHost()) === 0;
+            $back = $sameOrigin ? $referer : '/admin';
             $response = $response
                 ->withHeader('Set-Cookie', "ui_lang={$lang}; Path=/; Max-Age=31536000; HttpOnly; Secure; SameSite=Lax")
-                ->withHeader('Location', $request->getHeaderLine('Referer') ?: '/admin/login')
+                ->withHeader('Location', $back)
                 ->withStatus(302);
             return $response;
         });
@@ -72,8 +79,9 @@ return static function (App $app): void {
         $g->post('/login', [\App\Admin\Controller\LoginController::class, 'postLogin'])
             ->add(RateLimitMiddleware::class);
 
-        // Logout (Task 17)
-        $g->get('/logout', [\App\Admin\Controller\LoginController::class, 'getLogout']);
+        // Logout — POST + CSRF so a cross-site GET (e.g. <img src=.../admin/logout>)
+        // can't force-logout the operator. Still exempt from AuthMiddleware.
+        $g->post('/logout', [\App\Admin\Controller\LoginController::class, 'logout']);
 
         // Change password (protected)
         $g->get('/password', [\App\Admin\Controller\PasswordController::class, 'get']);

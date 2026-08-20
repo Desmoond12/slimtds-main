@@ -3,6 +3,7 @@ services:
     environment:
       DEPLOY_MODE: direct
       APP_ENV: prod
+      APP_DEBUG: "false"
       DOMAIN: ${DOMAIN}
     ports:
       - "80:80"

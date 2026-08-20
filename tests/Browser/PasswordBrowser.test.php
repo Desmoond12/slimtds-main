@@ -32,7 +32,7 @@ test('user can change password and log back in with the new one', function () {
     $page->assertPathIs('/admin');
     $page->assertSee('успешно');
 
-    $page->click('a[href="/admin/logout"]');
+    $page->click('form[action="/admin/logout"] button[type="submit"]');
     $page->assertPathIs('/admin/login');
     $page->fill('login', 'admin')->fill('password', 'newerpass789')->press('button[type=submit]');
     $page->assertPathIs('/admin');

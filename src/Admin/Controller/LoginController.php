@@ -7,13 +7,14 @@ namespace App\Admin\Controller;
 use App\Admin\Repository\AdminRepository;
 use App\Shared\Auth\AuthEventLogger;
 use App\Shared\Auth\PasswordHasher;
+use App\Shared\RealIp;
 use App\Shared\Telegram\TelegramNotifier;
 use App\Shared\View\View;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
 /**
- * Handles POST /admin/login and GET /admin/logout.
+ * Handles POST /admin/login and POST /admin/logout.
  * GET /admin/login is a view-only handler in routes.php (no behaviour).
  */
 final class LoginController
@@ -39,6 +40,9 @@ final class LoginController
 
         $admin = $this->admins->findByLogin($login);
         if ($admin === null) {
+            // Spend the same Argon2id time as a real verify so a non-existent
+            // login can't be distinguished from a valid one by response timing.
+            $this->hasher->verifyDummy($pass);
             return $this->fail($response, 'auth.wrong_credentials', $login, $ip, $ua, $view);
         }
 
@@ -50,6 +54,7 @@ final class LoginController
         // owner retrying too soon shouldn't extend their own lockout, and
         // an attacker gets no extra signal either way.
         if ($admin->isLocked()) {
+            $this->hasher->verifyDummy($pass);
             return $this->fail($response, 'auth.wrong_credentials', $login, $ip, $ua, $view);
         }
 
@@ -90,7 +95,7 @@ final class LoginController
         return $response->withHeader('Location', $target)->withStatus(302);
     }
 
-    public function getLogout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
+    public function logout(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         $adminLogin = null;
         if (isset($_SESSION['admin_id']) && is_int($_SESSION['admin_id'])) {
@@ -139,8 +144,11 @@ final class LoginController
 
     private function resolveIp(ServerRequestInterface $request): ?string
     {
-        $server = $request->getServerParams();
-        $ip = $server['REMOTE_ADDR'] ?? null;
-        return is_string($ip) && $ip !== '' ? $ip : null;
+        // Use the same trusted-proxy-aware resolution as RateLimitMiddleware so
+        // the audit trail records the real client IP (not the CF/proxy edge)
+        // if the admin host is ever placed behind a proxy. Forwarding headers
+        // are only honoured from trusted peers, so this can't be spoofed.
+        $ip = RealIp::from($request);
+        return $ip !== '' && $ip !== '0.0.0.0' ? $ip : null;
     }
 }

@@ -22,6 +22,18 @@
     root * /app/public
     encode zstd gzip
 
+    # Baseline security headers on every response (admin UI + engine). Blocks
+    # clickjacking of the authenticated admin, MIME-sniffing, and Referer leak.
+    # (HSTS is intentionally omitted here — TLS is terminated at Cloudflare in
+    # cf mode; enable HSTS on the CF edge. See Caddyfile.direct for the origin-
+    # TLS case.)
+    header {
+        -Server
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+    }
+
     # SECURITY: the admin panel must never surface on a public (Cloudflare-
     # proxied) hostname — only via direct origin-IP access by the operator.
     # Any request whose Host is not the bare origin IP gets a hard 404 for

@@ -127,8 +127,13 @@
                 <span x-text="theme === 'dark' ? '☀ light' : '☾ dark'"></span>
             </button>
 
-            <a href="<?= e(url('/admin/logout')) ?>"
-               style="margin-left:auto;font-size:0.75rem;color:var(--color-faint);text-decoration:none;font-family:var(--font-sans)"><?= e(t('auth.logout')) ?></a>
+            <a href="<?= e(url('/admin/password')) ?>"
+               style="margin-left:auto;font-size:0.75rem;color:var(--color-faint);text-decoration:none;font-family:var(--font-sans)"><?= e(t('password.title')) ?></a>
+            <form method="post" action="<?= e(url('/admin/logout')) ?>" style="margin:0;display:inline">
+                <?= csrf_field() ?>
+                <button type="submit"
+                        style="background:transparent;border:0;padding:0;cursor:pointer;font-size:0.75rem;color:var(--color-faint);font-family:var(--font-sans)"><?= e(t('auth.logout')) ?></button>
+            </form>
         </div>
     </aside>
 
@@ -188,7 +193,7 @@
         ['label' => t('nav.sessions'),     'href' => url('/admin/sessions'),     'group' => 'Pages',   'meta' => ''],
         ['label' => t('menu.statistics'),  'href' => url('/admin/statistics'),   'group' => 'Pages',   'meta' => ''],
         ['label' => t('menu.settings'),    'href' => url('/admin/settings'),     'group' => 'Pages',   'meta' => ''],
-        ['label' => t('auth.logout'),      'href' => url('/admin/logout'),       'group' => 'Account', 'meta' => ''],
+        ['label' => t('password.title'),   'href' => url('/admin/password'),     'group' => 'Account', 'meta' => ''],
     ];
     require __DIR__ . '/../_partials/cmdk.php';
     ?>

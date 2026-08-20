@@ -36,7 +36,12 @@ final class JsRedirectSchema implements Schema
         $delay = max(0, (int)($config['delay'] ?? 0));
         $mode  = ($config['mode'] ?? 'replace') === 'assign' ? 'assign' : 'replace';
 
-        $jsTarget   = json_encode($target, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        // JSON_HEX_TAG|APOS|AMP is mandatory here: the encoded value is emitted
+        // inside an inline <script> element, and json_encode does NOT escape < / >
+        // on its own. Without HEX_TAG a target containing </script>... breaks out
+        // of the script element (reflected XSS via visitor-controlled macros like
+        // {utm_source}/{referer} that reach the URL in raw mode).
+        $jsTarget   = json_encode($target, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP);
         $htmlTarget = htmlspecialchars($target, ENT_QUOTES);
 
         $jsCall = $delay > 0

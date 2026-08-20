@@ -187,11 +187,17 @@ final class PostbackController
         // Rejecting negative values here would silently break real revenue
         // postbacks from exactly this project's target vertical.
         $payoutFloat = is_numeric($payoutRaw) ? (float)$payoutRaw : 0.0;
-        if (!is_finite($payoutFloat) || abs($payoutFloat) >= 100_000_000.0) {
+        // Clamp on the ROUNDED value: numeric(10,2) stores 2 decimals, so a value
+        // like 99999999.995 (< 1e8, passes a raw check) rounds UP to 100000000.00 =
+        // 9 integer digits and overflows the column with a 22003 PDOException (500).
+        // Round first, reject if the rounded magnitude reaches 1e8, then store a
+        // canonical 2-decimal string (also avoids scientific notation for big floats).
+        $payoutRounded = is_finite($payoutFloat) ? round($payoutFloat, 2) : $payoutFloat;
+        if (!is_finite($payoutRounded) || abs($payoutRounded) >= 100_000_000.0) {
             $this->logRequest($method, $rawQuery, $sourceIp, $subid, $token, $status, $payoutRaw, $externalId, null, $offer?->id, 'INVALID_PAYOUT', 400);
             return $this->json($response, ['ok' => false, 'error' => 'invalid payout'], 400);
         }
-        $payout = (string)$payoutFloat;
+        $payout = number_format($payoutRounded, 2, '.', '');
 
         // Anonymous campaign ping — campaign-token without subid. Records a
         // conversion row tied only to the campaign, no specific click/offer.
@@ -535,10 +541,16 @@ final class PostbackController
                 SQL,
                 [
                     'method'             => $method,
-                    'raw_query'          => $rawQuery !== '' ? $rawQuery : null,
+                    // The postback token IS the money-path credential (a valid token
+                    // lets anyone forge FTD/deposit conversions via curl). Never store
+                    // it in cleartext in the audit table — a DB dump/backup or the
+                    // /admin/postback-log UI would otherwise hand out a working forgery
+                    // key. Redact it from raw_query and keep only a non-reversible
+                    // hash prefix for correlation/debugging.
+                    'raw_query'          => $rawQuery !== '' ? self::redactToken($rawQuery) : null,
                     'source_ip'          => $sourceIp !== '' && $sourceIp !== '0.0.0.0' ? $sourceIp : null,
                     'subid'              => $subid !== '' ? $subid : null,
-                    'token'              => $token !== '' ? $token : null,
+                    'token'              => $token !== '' ? 'sha256:' . substr(hash('sha256', $token), 0, 16) : null,
                     'status'             => $status,
                     'payout'             => (string)$payoutRaw,
                     'external_id'        => $externalId !== '' ? $externalId : null,
@@ -551,6 +563,20 @@ final class PostbackController
         } catch (\Throwable $e) {
             error_log('[postback] request log insert failed: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Redact the postback token value from a raw query string before it is
+     * persisted to the audit log. Matches `token=...` (and the outbound-style
+     * `postback_token=...`) up to the next `&`, case-insensitively.
+     */
+    private static function redactToken(string $rawQuery): string
+    {
+        return (string)preg_replace(
+            '/((?:^|&)(?:postback_)?token=)[^&]*/i',
+            '${1}[REDACTED]',
+            $rawQuery,
+        );
     }
 
     /** ISO-2 country → 🇦🇷-style regional-indicator flag (or '' on bad input). */

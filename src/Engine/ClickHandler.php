@@ -280,7 +280,10 @@ final class ClickHandler
                 return $response->withHeader('Content-Type', 'text/html; charset=utf-8');
             case 7: // JS Redirect
                 if (!$hasUrl) return $response->withStatus(204);
-                $j = json_encode($url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                // HEX_TAG|APOS|AMP: value is inlined in <script> below — json_encode
+                // does not escape < / >, so without these a </script> in the URL
+                // (via visitor macros) breaks out of the script element (XSS).
+                $j = json_encode($url, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP);
                 $h = htmlspecialchars($url, ENT_QUOTES);
                 $body = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">"
                       . "<meta name=\"referrer\" content=\"no-referrer\">"

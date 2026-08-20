@@ -13,6 +13,26 @@
     root * /app/public
     encode zstd gzip
 
+    # Baseline security headers on every response. In direct mode TLS is
+    # terminated here (Let's Encrypt), so HSTS belongs on the origin.
+    header {
+        -Server
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "no-referrer"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+    }
+
+    # NOTE: unlike cf mode there is no "bare origin IP" here — the admin panel
+    # is served on {$DOMAIN}. It stays behind AuthMiddleware + CSRF + lockout.
+    # For extra defence-in-depth, gate /admin to the operator's IP by setting
+    # ADMIN_ALLOW_IP and uncommenting:
+    #   @admin_blocked {
+    #       not remote_ip {$ADMIN_ALLOW_IP}
+    #       path /admin /admin/*
+    #   }
+    #   handle @admin_blocked { respond 403 }
+
     @static path /assets/* /p.js /favicon.ico /robots.txt
     handle @static {
         file_server

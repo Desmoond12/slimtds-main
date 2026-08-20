@@ -106,6 +106,11 @@ final class PostbackOutbox
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_FOLLOWLOCATION => true,
             CURLOPT_MAXREDIRS      => 5,
+            // Restrict both the initial fetch and any redirect hop to http/https.
+            // Without this a malicious/compromised partner endpoint could 30x-redirect
+            // the delivery to file://, gopher://, or an internal-only scheme (SSRF).
+            CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+            CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_TIMEOUT        => 10,
             CURLOPT_CONNECTTIMEOUT => 5,
             CURLOPT_USERAGENT      => 'slimTDS-postback/1.0',

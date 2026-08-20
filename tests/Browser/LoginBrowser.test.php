@@ -44,6 +44,6 @@ test('clicking logout clears session', function () {
     $page = visit('https://slimtds.local/admin/login');
     $page->fill('login', 'admin')->fill('password', 'browserpass456')->press('button[type=submit]');
     $page->assertPathIs('/admin');
-    $page->click('a[href="/admin/logout"]');
+    $page->click('form[action="/admin/logout"] button[type="submit"]');
     $page->assertPathIs('/admin/login');
 })->skip($skipBrowser, 'set BROWSER_TESTS=1 to enable browser tests');

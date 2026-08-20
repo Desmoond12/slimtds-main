@@ -169,8 +169,8 @@ test('a locked-out retry does not extend the lock further (no counter movement w
 test('logout destroys session and redirects to /admin/login', function (): void {
     $_SESSION = ['admin_id' => 1];
 
-    $req = (new ServerRequestFactory())->createServerRequest('GET', '/admin/logout');
-    $resp = $this->controller->getLogout($req, new Response());
+    $req = (new ServerRequestFactory())->createServerRequest('POST', '/admin/logout');
+    $resp = $this->controller->logout($req, new Response());
 
     expect($resp->getStatusCode())->toBe(302);
     expect($resp->getHeaderLine('Location'))->toBe('/admin/login');

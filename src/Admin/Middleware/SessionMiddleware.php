@@ -22,6 +22,12 @@ final class SessionMiddleware implements MiddlewareInterface
 
         session_set_save_handler($this->handler, true);
 
+        // Reject client-supplied session ids that don't already exist in our
+        // store: PHP mints a fresh id instead of adopting an attacker-planted
+        // one. Defence-in-depth against session fixation (login already calls
+        // session_regenerate_id, but this closes the pre-auth planting window).
+        ini_set('session.use_strict_mode', '1');
+
         $name = $_ENV['SESSION_NAME'] ?? 'slimtds_sess';
         $lifetime = (int)($_ENV['SESSION_LIFETIME'] ?? 1_209_600);
 
