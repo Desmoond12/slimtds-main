@@ -84,7 +84,7 @@ final class TelegramAlertsCommand extends Command
                            count(*) FILTER (WHERE processing_status = 'CLICK_NOT_FOUND') AS unknown_click,
                            count(*) FILTER (WHERE processing_status = 'UNKNOWN_TOKEN')  AS unknown_token
                     FROM core.postback_requests
-                    WHERE created_at >= now() - interval '1 hour'
+                    WHERE received_at >= now() - interval '1 hour'
                 SQL,
             );
             $total = (int)($row['total'] ?? 0);
