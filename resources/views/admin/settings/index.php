@@ -59,6 +59,13 @@ require __DIR__ . '/../../_partials/page-header.php';
     <!-- ===================== General tab ===================== -->
     <section x-show="tab === 'general'" class="anim-fade-in" role="tabpanel" style="max-width:600px">
 
+        <div class="form-section" style="margin-bottom:22px">
+            <span class="form-section-label"><?= e(t('password.title')) ?></span>
+            <div style="margin-top:10px">
+                <a href="<?= e(url('/admin/password')) ?>" class="btn btn-secondary"><?= e(t('password.submit')) ?></a>
+            </div>
+        </div>
+
         <form method="post" action="<?= e(url('/admin/settings')) ?>">
             <?= csrf_field($csrf_token) ?>
 

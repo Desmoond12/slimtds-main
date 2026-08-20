@@ -35,12 +35,16 @@
     }
 
     # SECURITY: the admin panel must never surface on a public (Cloudflare-
-    # proxied) hostname — only via direct origin-IP access by the operator.
-    # Any request whose Host is not the bare origin IP gets a hard 404 for
-    # /admin* and the bare "/" (which otherwise 302-redirects to /admin).
-    # To grant a dedicated admin hostname later, add it: `not host <ip> admin.example`.
+    # proxied) hostname. /admin* and the bare "/" return a hard 404 unless the
+    # Host is one of the operator's private entry points:
+    #   - 5.252.20.235  direct origin-IP access (plain HTTP — trusted network only)
+    #   - localhost     via an SSH tunnel: `ssh -L 8080:localhost:80 root@5.252.20.235`
+    #                   then open http://localhost:8080/admin — traffic is
+    #                   encrypted end-to-end by SSH (closes the plaintext-HTTP hop).
+    #   - $ADMIN_HOST   optional dedicated admin hostname (e.g. a CF-proxied
+    #                   admin.<domain> for real HTTPS); set the env to enable.
     @admin_hidden {
-        not host {$ADMIN_HOST:5.252.20.235}
+        not host 5.252.20.235 localhost {$ADMIN_HOST:5.252.20.235}
         path /admin /admin/* /
     }
     handle @admin_hidden {
