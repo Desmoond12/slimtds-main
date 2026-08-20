@@ -22,6 +22,19 @@
     root * /app/public
     encode zstd gzip
 
+    # SECURITY: the admin panel must never surface on a public (Cloudflare-
+    # proxied) hostname — only via direct origin-IP access by the operator.
+    # Any request whose Host is not the bare origin IP gets a hard 404 for
+    # /admin* and the bare "/" (which otherwise 302-redirects to /admin).
+    # To grant a dedicated admin hostname later, add it: `not host <ip> admin.example`.
+    @admin_hidden {
+        not host {$ADMIN_HOST:5.252.20.235}
+        path /admin /admin/* /
+    }
+    handle @admin_hidden {
+        respond 404
+    }
+
     @static path /assets/* /p.js /favicon.ico /robots.txt
     handle @static {
         file_server
@@ -30,5 +43,7 @@
     @pjs path /p.js
     header @pjs Access-Control-Allow-Origin *
 
-    php_server
+    handle {
+        php_server
+    }
 }
